@@ -11,10 +11,10 @@ WHILTESPACE [[:blank:]]
 
 INTEGER [0-9]+
 
+IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
+
 CHAR \'.?\'
 STRING \".+\"
-
-IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 %%
 
 {BLOCKCOMMENT}  /* do nothing */
@@ -37,19 +37,19 @@ IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
     return INTEGER;
 }
 
+{IDENTIFIER} {
+    TreeNode* node = new TreeNode(lineno, NODE_VAR);
+    node->var_name = string(yytext);
+    yylval = node;
+    return IDENTIFIER;
+}
+
 {CHAR} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
     node->int_val = yytext[1];
     yylval = node;
     return CHAR;
-}
-
-{IDENTIFIER} {
-    TreeNode* node = new TreeNode(lineno, NODE_VAR);
-    node->var_name = string(yytext);
-    yylval = node;
-    return IDENTIFIER;
 }
 
 {WHILTESPACE} /* do nothing */

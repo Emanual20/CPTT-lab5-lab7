@@ -44,7 +44,7 @@ public:
     void printAST(); // 先输出自己 + 孩子们的id；再依次让每个孩子输出AST。
     void printSpecialInfo();
 
-    void genNodeId();
+    int genNodeId(int);
 
 public:
     OperatorType optype;  // 如果是表达式
