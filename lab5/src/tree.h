@@ -11,24 +11,32 @@ enum NodeType
     NODE_EXPR,
     NODE_TYPE,
 
+    NODE_OP,
+
     NODE_STMT,
     NODE_PROG,
 };
 
 enum OperatorType
 {
-    OP_EQ,  // ==
+    OP_EQ,  // =
+    OP_PLUS, // +
+    OP_MINUS, // -
+    OP_NOT, // !
+    OP_MUL, // *
+    OP_DIV, // / 
+    OP_MOD, // %
 };
 
 enum StmtType {
     STMT_SKIP,
     STMT_DECL,
-}
-;
+    STMT_EXP,// if StmtType=STMT_EXP, it has property OperatorType
+};
 
 struct TreeNode {
 public:
-    int nodeID;  // 用于作业的序号输出
+    int nodeID;
     int lineno;
     NodeType nodeType;
 
@@ -41,15 +49,16 @@ public:
     void printNodeInfo();
     void printChildrenId();
 
-    void printAST(); // 先输出自己 + 孩子们的id；再依次让每个孩子输出AST。
+    void printAST(); 
     void printSpecialInfo();
 
     int genNodeId(int);
 
 public:
-    OperatorType optype;  // 如果是表达式
-    Type* type;  // 变量、类型、表达式结点，有类型。
+    OperatorType optype;  // if StmtType=STMT_EXP, it has property OperatorType
+    Type* type;  
     StmtType stype;
+
     int int_val;
     char ch_val;
     bool b_val;

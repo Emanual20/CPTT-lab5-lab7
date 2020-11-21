@@ -76,8 +76,45 @@ void TreeNode::printSpecialInfo() {
             cout<<" "<<this->var_name<<" ";
             break;
         }
-        case NODE_EXPR:
+        case NODE_EXPR:{
+            cout<<"children:[";
+            this->printChildrenId();
+            cout<<"]";
+            cout<<" optype: ";
+            switch(this->optype){
+                case OP_EQ:{
+                    cout<<"= ";
+                    break;
+                }
+                case OP_PLUS:{
+                    cout<<"+ ";
+                    break;
+                }
+                case OP_MINUS:{
+                    cout<<"- ";
+                    break;
+                }
+                case OP_NOT:{
+                    cout<<"! ";
+                    break;
+                }
+                case OP_MUL:{
+                    cout<<"* ";
+                    break;
+                }
+                case OP_DIV:{
+                    cout<<"/ ";
+                    break;
+                }
+                case OP_MOD:{
+                    cout<<"% ";
+                    break;
+                }
+                default:
+                    break;
+            }
             break;
+        }
         case NODE_STMT:{
             cout<<"children:[";
             this->printChildrenId();
@@ -103,6 +140,7 @@ string TreeNode::sType2String(StmtType type) {
     switch(type){
         case STMT_SKIP: return "STMT_SKIP";
         case STMT_DECL: return "STMT_DECL";
+        case STMT_EXP:  return "STMT_EXP";
     }
     return "unknown type";
 }
@@ -114,6 +152,8 @@ string TreeNode::nodeType2String (NodeType type){
         case NODE_VAR:   return "NODE_VAR";
         case NODE_EXPR:  return "NODE_EXPR";
         case NODE_TYPE:  return "NODE_TYPE";
+
+        case NODE_OP:    return "NODE_OP";
 
         case NODE_STMT:  return "NODE_STMT";
         case NODE_PROG:  return "NODE_PROG";

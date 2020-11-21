@@ -25,9 +25,17 @@ STRING \".+\"
 "bool" return T_BOOL;
 "char" return T_CHAR;
 
+"+" return LOP_PLUS;
+"-" return LOP_MINUS;
+"!" return LOP_NOT;
+
+"*" return LOP_MUL;
+"/" return LOP_DIV;
+"%" return LOP_MOD;
+
 "=" return LOP_ASSIGN;
 
-";" return  SEMICOLON;
+";" return SEMICOLON;
 
 {INTEGER} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
@@ -50,6 +58,14 @@ STRING \".+\"
     node->int_val = yytext[1];
     yylval = node;
     return CHAR;
+}
+
+{STRING} {
+    TreeNode* node = new TreeNode(lineno, NODE_CONST);
+    node->type = TYPE_STRING;
+    node->str_val = yytext;
+    yylval = node;
+    return STRING;
 }
 
 {WHILTESPACE} /* do nothing */
