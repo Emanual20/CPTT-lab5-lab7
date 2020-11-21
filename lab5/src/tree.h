@@ -26,6 +26,14 @@ enum OperatorType
     OP_MUL, // *
     OP_DIV, // / 
     OP_MOD, // %
+    OP_LESS, // <
+    OP_GREA, // >
+    OP_LE, // <=
+    OP_GE, // >=
+    OP_EEQ, // ==
+    OP_NEQ, // !=
+    OP_LAND, // &&
+    OP_LOR, // ||
 };
 
 enum StmtType {

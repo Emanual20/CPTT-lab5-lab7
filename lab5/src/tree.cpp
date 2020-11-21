@@ -110,6 +110,38 @@ void TreeNode::printSpecialInfo() {
                     cout<<"% ";
                     break;
                 }
+                case OP_LESS:{
+                    cout<<"< ";
+                    break;
+                }
+                case OP_GREA:{
+                    cout<<"> ";
+                    break;
+                }
+                case OP_LE:{
+                    cout<<"<= ";
+                    break;
+                }
+                case OP_GE:{
+                    cout<<">= ";
+                    break;
+                }
+                case OP_EEQ:{
+                    cout<<"== ";
+                    break;
+                }
+                case OP_NEQ:{
+                    cout<<"!= ";
+                    break;
+                }
+                case OP_LAND:{
+                    cout<<"&& ";
+                    break;
+                }
+                case OP_LOR:{
+                    cout<<"|| ";
+                    break;
+                }
                 default:
                     break;
             }

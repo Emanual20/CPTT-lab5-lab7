@@ -33,6 +33,17 @@ STRING \".+\"
 "/" return LOP_DIV;
 "%" return LOP_MOD;
 
+"<" return LOP_LESS;
+">" return LOP_GREA;
+"<=" return LOP_LE;
+">=" return LOP_GE;
+
+"==" return LOP_EEQ;
+"!=" return LOP_NEQ;
+
+"&&" return LOP_LAND;
+"||" return LOP_LOR;
+
 "=" return LOP_ASSIGN;
 
 ";" return SEMICOLON;
