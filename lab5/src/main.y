@@ -54,12 +54,28 @@ statements
 
 statement
 : SEMICOLON  {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
-| declaration SEMICOLON {$$ = $1;}
-| ifstmt {$$ = $1;}
+| declarestmt SEMICOLON {$$ = $1;}
 | block {$$ = $1;}
+| ifstmt {$$ = $1;}
+| forstmt {$$ = $1;}
+| whilestmt {$$ = $1;}
+| returnstmt SEMICOLON {$$ = $1;}
+| KEY_BREAK SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
+| KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
+| assignstmt SEMICOLON {$$ = $1;}
 ;
 
-declaration
+forstmt
+: KEY_FOR LOP_LPAREN assignstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+    TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
+    node->stype = STMT_FOR;
+    node->addChild($3); node->addChild($5); node->addChild($7);
+    node->addChild($9);
+    $$ = node;
+}
+;
+
+declarestmt
 : T IDENTIFIER LOP_ASSIGN expr{  // declare and init
     TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
     node->stype = STMT_DECL;
@@ -74,6 +90,36 @@ declaration
     node->addChild($1);
     node->addChild($2);
     $$ = node;   
+}
+;
+
+assignstmt
+: LValExp LOP_ASSIGN expr{
+    TreeNode* node = new TreeNode(lineno, NODE_STMT);
+    node->stype = STMT_ASSIGN;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
+;
+
+returnstmt
+: KEY_RETURN {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_RETURN;}
+| KEY_RETURN LorExp {
+    TreeNode* node = new TreeNode($2->lineno, NODE_STMT);
+    node->stype = STMT_RETURN;
+    node->addChild($2);
+    $$ = node;
+}
+;
+
+whilestmt
+: KEY_WHILE LOP_LPAREN LorExp LOP_RPAREN statement{
+    TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
+    node->stype = STMT_WHILE;
+    node->addChild($3);
+    node->addChild($5);
+    $$ = node;
 }
 ;
 
@@ -111,6 +157,17 @@ PrimaryExp
 }
 | STRING {
     $$ = $1;
+}
+;
+
+//left value expression for further process
+LValExp
+: IDENTIFIER{
+    TreeNode* node = new TreeNode($1->lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_LVAL;
+    node->addChild($1);
+    $$ = node;
 }
 ;
 

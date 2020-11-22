@@ -142,6 +142,10 @@ void TreeNode::printSpecialInfo() {
                     cout<<"|| ";
                     break;
                 }
+                case OP_LVAL:{
+                    cout<<"lval expr ";
+                    break;
+                }
                 default:
                     break;
             }
@@ -171,12 +175,18 @@ void TreeNode::printSpecialInfo() {
 
 string TreeNode::sType2String(StmtType type) {
     switch(type){
-        case STMT_SKIP:   return " STMT_SKIP ";
-        case STMT_DECL:   return " STMT_DECL ";
-        case STMT_EXP:    return " STMT_EXP ";
-        case STMT_IF:     return " STMT: if ";
-        case STMT_IFELSE: return " STMT: ifelse ";
-        case STMT_BLOCK:  return " STMT: block{} ";
+        case STMT_SKIP:     return " STMT_SKIP ";
+        case STMT_DECL:     return " STMT_DECL ";
+        case STMT_EXP:      return " STMT_EXP ";
+        case STMT_IF:       return " STMT: if ";
+        case STMT_IFELSE:   return " STMT: ifelse ";
+        case STMT_BLOCK:    return " STMT: block {} ";
+        case STMT_WHILE:    return " STMT: while ";
+        case STMT_RETURN:   return " STMT: return ";
+        case STMT_BREAK:    return " STMT: break ";
+        case STMT_CONTINUE: return " STMT: continue ";
+        case STMT_ASSIGN:   return " STMT: assign = ";
+        case STMT_FOR:      return " STMT: for ";
     }
     return "unknown type";
 }

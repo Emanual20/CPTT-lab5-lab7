@@ -34,6 +34,7 @@ enum OperatorType
     OP_NEQ, // !=
     OP_LAND, // &&
     OP_LOR, // ||
+    OP_LVAL, // left value
 };
 
 enum StmtType {
@@ -43,6 +44,12 @@ enum StmtType {
     STMT_IF,
     STMT_IFELSE,
     STMT_BLOCK,
+    STMT_WHILE,
+    STMT_RETURN,
+    STMT_BREAK,
+    STMT_CONTINUE,
+    STMT_ASSIGN,
+    STMT_FOR,
 };
 
 struct TreeNode {

@@ -28,10 +28,10 @@ Lno@4       @26 NODE_STMT children:[@27 @30 @35 ] STMT: ifelse
 Lno@4       @27 NODE_EXPR children:[@28 @29 ] optype: == 
 Lno@4       @28 NODE_VAR  a 
 Lno@4       @29 NODE_CONST  1 
-Lno@4       @30 NODE_STMT children:[@31 ] STMT: block{} 
+Lno@4       @30 NODE_STMT children:[@31 ] STMT: block {} 
 Lno@4       @31 NODE_STMT children:[@32 @33 @34 ] STMT_DECL 
 Lno@4       @32 NODE_TYPE  int 
 Lno@4       @33 NODE_VAR  d 
 Lno@4       @34 NODE_CONST  7 
-Lno@4       @35 NODE_STMT children:[@36 ] STMT: block{} 
+Lno@4       @35 NODE_STMT children:[@36 ] STMT: block {} 
 Lno@4       @36 NODE_STMT children:[] STMT_SKIP 
