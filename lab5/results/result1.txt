@@ -30,22 +30,25 @@ Lno@3       @28 NODE_TYPE  string
 Lno@3       @29 NODE_ITEM children:[@30 @31 ] ITEM_DECL
 Lno@3       @30 NODE_VAR  variable_name: a 
 Lno@3       @31 NODE_CONST  "15" 
-Lno@4       @32 NODE_STMT children:[@33 @38 @41 @45 ] STMT: for 
-Lno@4       @33 NODE_STMT children:[@34 @35 ] STMT_DECL 
-Lno@4       @34 NODE_TYPE  int 
-Lno@4       @35 NODE_ITEM children:[@36 @37 ] ITEM_DECL
-Lno@4       @36 NODE_VAR  variable_name: i 
-Lno@4       @37 NODE_CONST  1 
-Lno@4       @38 NODE_EXPR children:[@39 @40 ] optype: <= 
-Lno@4       @39 NODE_VAR  variable_name: i 
-Lno@4       @40 NODE_CONST  10 
-Lno@4       @41 NODE_EXPR children:[@42 @44 ] optype: += 
-Lno@4       @42 NODE_EXPR children:[@43 ] optype: lval expr 
-Lno@4       @43 NODE_VAR  variable_name: i 
-Lno@4       @44 NODE_CONST  1 
-Lno@4       @45 NODE_STMT children:[@46 ] STMT: block {} 
-Lno@5       @46 NODE_FUNC children:[@47 @48 ]  func_name: printf
-Lno@5       @47 NODE_CONST  "%d\n" 
-Lno@5       @48 NODE_LIST children:[@49 ] 
-Lno@5       @49 NODE_ITEM children:[@50 ] ITEM_SPF
-Lno@5       @50 NODE_VAR  variable_name: s 
+Lno@4       @32 NODE_FUNC children:[@33 @34 @35 ]  func_name: main
+Lno@4       @33 NODE_VAR  variable_name: main 
+Lno@4       @34 NODE_LIST children:[] 
+Lno@5       @35 NODE_STMT children:[@36 ] STMT: block {} 
+Lno@5       @36 NODE_STMT children:[@37 @42 @45 @49 ] STMT: for 
+Lno@5       @37 NODE_STMT children:[@38 @39 ] STMT_DECL 
+Lno@5       @38 NODE_TYPE  int 
+Lno@5       @39 NODE_ITEM children:[@40 @41 ] ITEM_DECL
+Lno@5       @40 NODE_VAR  variable_name: i 
+Lno@5       @41 NODE_CONST  0 
+Lno@5       @42 NODE_EXPR children:[@43 @44 ] optype: < 
+Lno@5       @43 NODE_VAR  variable_name: i 
+Lno@5       @44 NODE_CONST  10 
+Lno@5       @45 NODE_EXPR children:[@46 @48 ] optype: += 
+Lno@5       @46 NODE_EXPR children:[@47 ] optype: lval expr 
+Lno@5       @47 NODE_VAR  variable_name: i 
+Lno@5       @48 NODE_CONST  1 
+Lno@6       @49 NODE_STMT children:[@50 ] STMT: block {} 
+Lno@6       @50 NODE_EXPR children:[@51 @53 ] optype: *= 
+Lno@6       @51 NODE_EXPR children:[@52 ] optype: lval expr 
+Lno@6       @52 NODE_VAR  variable_name: s 
+Lno@6       @53 NODE_CONST  5 

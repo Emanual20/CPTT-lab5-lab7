@@ -62,6 +62,7 @@ enum StmtType {
 enum ItemType{
     ITEM_DECL,
     ITEM_SPF, // scanf or printf
+    ITEM_UFUNC,
 };
 
 struct TreeNode {

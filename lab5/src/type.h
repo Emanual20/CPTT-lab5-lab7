@@ -23,7 +23,8 @@ public:
 public:  
     /* 如果你要设计复杂类型系统的话，可以修改这一部分 */
     ValueType* childType; // for union or struct
-    ValueType* paramType, retType; // for function
+    ValueType* paramType;
+    ValueType  retType; // for function
     
     void addChild(Type* t);
     void addParam(Type* t);

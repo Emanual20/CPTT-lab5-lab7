@@ -6,7 +6,7 @@
     int yylex();
     int yyerror( char const * );
 %}
-%token T_CHAR T_INT T_STRING T_BOOL 
+%token T_CHAR T_INT T_STRING T_BOOL T_VOID
 
 %token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF
 
@@ -36,27 +36,24 @@
 
 %%
 
-program
-: statements {root = new TreeNode(0, NODE_PROG); root->addChild($1);}
-;
+Program: CompUnits{root = new TreeNode(0,NODE_PROG); root->addChild($1);};
 
-block
-: LOP_LBRACE statements LOP_RBRACE{
-    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
-    node->stype = STMT_BLOCK;
-    node->addChild($2);
-    $$ = node;
+CompUnits
+: CompUnit{
+    $$=$1;
+}
+| CompUnits CompUnit{
+    $$=$1; $$->addSibling($2);
 }
 ;
 
-statements
-:  statement {$$=$1;}
-|  statements statement {$$=$1; $$->addSibling($2);}
+CompUnit
+: decl SEMICOLON{$$ = $1;}
+| funcdef {$$ = $1;}
 ;
 
 statement
 : SEMICOLON  {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
-| declarestmt SEMICOLON {$$ = $1;}
 | block {$$ = $1;}
 | ifstmt {$$ = $1;}
 | forstmt {$$ = $1;}
@@ -66,6 +63,136 @@ statement
 | KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
 | assignstmt SEMICOLON {$$ = $1;}
 | funccall {$$=$1;}
+;
+
+// for further const decl later
+decl
+: declarestmt{
+    $$ = $1;
+}
+;
+
+declarestmt
+: T declareitem{  // declare and init
+    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
+    node->stype = STMT_DECL;
+    node->addChild($1);
+    node->addChild($2);
+    $$ = node;   
+} 
+| declarestmt LOP_COMMA declareitem {
+    $1->addChild($3);
+    $$ = $1;
+}
+;
+
+declareitem
+: IDENTIFIER LOP_ASSIGN expr{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
+| IDENTIFIER{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
+    node->addChild($1);
+    $$ = node;
+}
+;
+
+assignstmt
+: LValExp LOP_ASSIGN expr{
+    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_EQ;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
+| LValExp AssignEqOp expr{
+    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = $2->optype;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
+;
+
+funcdef
+: T IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
+    TreeNode* node = new TreeNode($1->lineno,NODE_FUNC);
+    node -> type = new Type(COMPOSE_FUNCTION); 
+    node -> type -> retType = $1 -> type -> type; // retType
+    node -> var_name = $2 -> var_name; // funcname
+    node -> addChild($2); // this line can be ignored further
+    node -> addChild($4); // params
+    node -> addChild($6);
+    $$ = node;
+}
+| T_VOID IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
+    TreeNode* node = new TreeNode($1->lineno,NODE_FUNC);
+    node -> type = new Type(COMPOSE_FUNCTION); 
+    node -> type -> retType = TYPE_VOID -> type; // retType
+    node -> var_name = $2 -> var_name; // funcname
+    node -> addChild($2); // this line can be ignored further
+    node -> addChild($4); // params
+    node -> addChild($6);
+    $$ = node;
+}
+;
+
+funcparams
+: funcparam {
+    $$ = new TreeNode(lineno, NODE_LIST);
+    $$ -> addChild($1);
+}
+| funcparams LOP_COMMA funcparam {
+    $$ = $1;
+    $$ -> addChild($3);
+}
+| {$$ = new TreeNode(lineno, NODE_LIST);}
+;
+
+//maybe expand of array
+funcparam
+: T IDENTIFIER {
+    TreeNode* node = new TreeNode(lineno, NODE_ITEM);
+    node->itype=ITEM_UFUNC;
+    node->type=$1->type;
+    node->addChild($2);
+    $$=node;
+}
+;
+
+block
+: LOP_LBRACE blocklist LOP_RBRACE{
+    $$ = $2;
+}
+;
+
+blocklist
+: decl{
+    //maybe further replace by NODE_LIST
+    $$ = new TreeNode($1->lineno, NODE_STMT);
+    $$->stype = STMT_BLOCK;
+    $$->addChild($1);
+}
+| statement{
+    $$ = new TreeNode($1->lineno, NODE_STMT);
+    $$->stype = STMT_BLOCK;
+    $$->addChild($1);
+}
+| blocklist decl{
+    $$ = $1;
+    $$->addChild($2);
+}
+| blocklist statement{
+    $$ = $1;
+    $$->addChild($2);
+}
 ;
 
 funccall
@@ -128,55 +255,6 @@ forstmt
     node->stype = STMT_FOR;
     node->addChild($3); node->addChild($5); node->addChild($7);
     node->addChild($9);
-    $$ = node;
-}
-;
-
-declarestmt
-: T declareitem{  // declare and init
-    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
-    node->stype = STMT_DECL;
-    node->addChild($1);
-    node->addChild($2);
-    $$ = node;   
-} 
-| declarestmt LOP_COMMA declareitem {
-    $1->addChild($3);
-    $$ = $1;
-}
-;
-
-declareitem
-: IDENTIFIER LOP_ASSIGN expr{
-    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
-    node->itype = ITEM_DECL;
-    node->addChild($1);
-    node->addChild($3);
-    $$ = node;
-}
-| IDENTIFIER{
-    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
-    node->itype = ITEM_DECL;
-    node->addChild($1);
-    $$ = node;
-}
-;
-
-assignstmt
-: LValExp LOP_ASSIGN expr{
-    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
-    node->stype = STMT_EXP;
-    node->optype = OP_EQ;
-    node->addChild($1);
-    node->addChild($3);
-    $$ = node;
-}
-| LValExp AssignEqOp expr{
-    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
-    node->stype = STMT_EXP;
-    node->optype = $2->optype;
-    node->addChild($1);
-    node->addChild($3);
     $$ = node;
 }
 ;
