@@ -28,6 +28,7 @@ STRING \".+\"
 "int" return T_INT;
 "bool" return T_BOOL;
 "char" return T_CHAR;
+"string" return T_STRING;
 
 "if" return KEY_IF;
 "else" return KEY_ELSE;
