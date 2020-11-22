@@ -8,7 +8,7 @@
 %}
 %token T_CHAR T_INT T_STRING T_BOOL 
 
-%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN
+%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF
 
 %token LOP_MINUS LOP_PLUS LOP_NOT
 %token LOP_MUL LOP_DIV LOP_MOD
@@ -17,8 +17,8 @@
 %token LOP_LAND
 %token LOP_LOR
 
-%token LOP_ASSIGN 
-%token LOP_LPAREN LOP_RPAREN LOP_LBRACE LOP_RBRACE
+%token LOP_ASSIGN LOP_PLUSEQ LOP_MINUSEQ LOP_MODEEQ LOP_MULEQ LOP_DIVEQ 
+%token LOP_COMMA LOP_LPAREN LOP_RPAREN LOP_LBRACE LOP_RBRACE
 %token SEMICOLON
 
 %token IDENTIFIER INTEGER CHAR BOOL STRING
@@ -29,8 +29,10 @@
 %left LOP_LESS LOP_GREA LOP_LE LOP_GE
 %left LOP_EEQ LOP_NEQ
 %left LOP_LAND
-%left LOP_LOP
-%left LOP_EQ
+%left LOP_LOR
+%left LOP_EQ 
+%left LOP_PLUSEQ LOP_MINUSEQ LOP_MODEQ LOP_MULEQ LOP_DIVEQ
+%left LOP_COMMA
 
 %%
 
@@ -63,10 +65,65 @@ statement
 | KEY_BREAK SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
 | KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
 | assignstmt SEMICOLON {$$ = $1;}
+| funccall {$$=$1;}
+;
+
+funccall
+: scanfstmt SEMICOLON {$$=$1;}
+| printfstmt SEMICOLON {$$=$1;}
+;
+
+scanfstmt
+: KEY_SCANF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
+    TreeNode* node = new TreeNode(lineno, NODE_FUNC);
+    node->type = TYPE_VOID;
+    node->addChild($3);
+    node->addChild($5);
+    node->var_name="scanf";
+    $$ = node;
+}
+;
+
+printfstmt
+: KEY_PRINTF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
+    TreeNode* node = new TreeNode(lineno, NODE_FUNC);
+    node->type = TYPE_VOID;
+    node->addChild($3);
+    node->addChild($5);
+    node->var_name="printf";
+    $$ = node;
+}
+;
+
+spflist
+: expr {
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_SPF;
+    expnode->addChild($1);
+    
+    TreeNode* node = new TreeNode(lineno, NODE_LIST);
+    node->addChild(expnode);
+    $$ = node;
+}
+| spflist LOP_COMMA expr{
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_SPF;
+    expnode->addChild($3);
+    
+    $$ = $1;
+    $$->addChild(expnode);
+}
 ;
 
 forstmt
-: KEY_FOR LOP_LPAREN assignstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+: KEY_FOR LOP_LPAREN declarestmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+    TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
+    node->stype = STMT_FOR;
+    node->addChild($3); node->addChild($5); node->addChild($7);
+    node->addChild($9);
+    $$ = node;
+}
+| KEY_FOR LOP_LPAREN assignstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
     node->addChild($3); node->addChild($5); node->addChild($7);
@@ -76,27 +133,48 @@ forstmt
 ;
 
 declarestmt
-: T IDENTIFIER LOP_ASSIGN expr{  // declare and init
+: T declareitem{  // declare and init
     TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
     node->stype = STMT_DECL;
     node->addChild($1);
     node->addChild($2);
-    node->addChild($4);
     $$ = node;   
 } 
-| T IDENTIFIER {
-    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
-    node->stype = STMT_DECL;
+| declarestmt LOP_COMMA declareitem {
+    $1->addChild($3);
+    $$ = $1;
+}
+;
+
+declareitem
+: IDENTIFIER LOP_ASSIGN expr{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
     node->addChild($1);
-    node->addChild($2);
-    $$ = node;   
+    node->addChild($3);
+    $$ = node;
+}
+| IDENTIFIER{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
+    node->addChild($1);
+    $$ = node;
 }
 ;
 
 assignstmt
 : LValExp LOP_ASSIGN expr{
-    TreeNode* node = new TreeNode(lineno, NODE_STMT);
-    node->stype = STMT_ASSIGN;
+    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_EQ;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
+| LValExp AssignEqOp expr{
+    TreeNode* node = new TreeNode(lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = $2->optype;
     node->addChild($1);
     node->addChild($3);
     $$ = node;
@@ -314,6 +392,13 @@ RelOp: LOP_LESS {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_LESS;}
 
 EqOp: LOP_EEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_EEQ;}
 | LOP_NEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_NEQ;}
+;
+
+AssignEqOp: LOP_PLUSEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_PLUSEQ;}
+| LOP_MINUSEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_MINUSEQ;}
+| LOP_MODEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_MODEQ;}
+| LOP_MULEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_MULEQ;}
+| LOP_DIVEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_DIVEQ;}
 ;
 
 %%

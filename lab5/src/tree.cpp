@@ -73,7 +73,7 @@ void TreeNode::printSpecialInfo() {
         }
         case NODE_VAR:{
 
-            cout<<" "<<this->var_name<<" ";
+            cout<<" variable_name: "<<this->var_name<<" ";
             break;
         }
         case NODE_EXPR:{
@@ -146,15 +146,41 @@ void TreeNode::printSpecialInfo() {
                     cout<<"lval expr ";
                     break;
                 }
+                case OP_PLUSEQ:{
+                    cout<<"+= ";
+                    break;
+                }
+                case OP_MINUSEQ:{
+                    cout<<"-= ";
+                    break;
+                }
+                case OP_MODEQ:{
+                    cout<<"%= ";
+                    break;
+                }
+                case OP_MULEQ:{
+                    cout<<"*= ";
+                    break;
+                }
+                case OP_DIVEQ:{
+                    cout<<"/= ";
+                    break; 
+                }
                 default:
                     break;
             }
             break;
         }
+        case NODE_TYPE:{
+            cout<<" "<<this->type->getTypeInfo()<<" ";
+            break;
+        }
         case NODE_STMT:{
-            cout<<"children:[";
-            this->printChildrenId();
-            cout<<"]";
+            if(this->stype!=STMT_SKIP){
+                cout<<"children:[";
+                this->printChildrenId();
+                cout<<"]";
+            }
             cout<<this->sType2String(this->stype);
             break;
         }
@@ -164,8 +190,24 @@ void TreeNode::printSpecialInfo() {
             cout<<"]";
             break;
         }
-        case NODE_TYPE:{
-            cout<<" "<<this->type->getTypeInfo()<<" ";
+        case NODE_ITEM:{
+            cout<<"children:[";
+            this->printChildrenId();
+            cout<<"] ";
+            cout<<this->iType2String(this->itype);
+            break;
+        }
+        case NODE_LIST:{
+            cout<<"children:[";
+            this->printChildrenId();
+            cout<<"] ";
+            break;
+        }
+        case NODE_FUNC:{
+            cout<<"children:[";
+            this->printChildrenId();
+            cout<<"] ";
+            cout<<" func_name: "<<this->var_name;
             break;
         }
         default:
@@ -185,7 +227,6 @@ string TreeNode::sType2String(StmtType type) {
         case STMT_RETURN:   return " STMT: return ";
         case STMT_BREAK:    return " STMT: break ";
         case STMT_CONTINUE: return " STMT: continue ";
-        case STMT_ASSIGN:   return " STMT: assign = ";
         case STMT_FOR:      return " STMT: for ";
     }
     return "unknown type";
@@ -200,9 +241,20 @@ string TreeNode::nodeType2String (NodeType type){
         case NODE_TYPE:  return "NODE_TYPE";
 
         case NODE_OP:    return "NODE_OP";
+        case NODE_ITEM:  return "NODE_ITEM";
+        case NODE_LIST:  return "NODE_LIST";
+        case NODE_FUNC:  return "NODE_FUNC";
 
         case NODE_STMT:  return "NODE_STMT";
         case NODE_PROG:  return "NODE_PROG";
+    }
+    return "unknown type";
+}
+
+string TreeNode::iType2String (ItemType type){
+    switch(type){
+        case ITEM_DECL:   return "ITEM_DECL";
+        case ITEM_SPF:    return "ITEM_SPF";
     }
     return "unknown type";
 }

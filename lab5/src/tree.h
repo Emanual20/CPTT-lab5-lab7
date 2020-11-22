@@ -12,6 +12,9 @@ enum NodeType
     NODE_TYPE,
 
     NODE_OP,
+    NODE_ITEM,
+    NODE_LIST, // for some func para list
+    NODE_FUNC,
 
     NODE_STMT,
     NODE_PROG,
@@ -35,6 +38,11 @@ enum OperatorType
     OP_LAND, // &&
     OP_LOR, // ||
     OP_LVAL, // left value
+    OP_PLUSEQ,  // +=
+    OP_MINUSEQ, // -=
+    OP_MODEQ, // %=
+    OP_MULEQ, // *=
+    OP_DIVEQ, // /=
 };
 
 enum StmtType {
@@ -48,8 +56,12 @@ enum StmtType {
     STMT_RETURN,
     STMT_BREAK,
     STMT_CONTINUE,
-    STMT_ASSIGN,
     STMT_FOR,
+};
+
+enum ItemType{
+    ITEM_DECL,
+    ITEM_SPF, // scanf or printf
 };
 
 struct TreeNode {
@@ -76,6 +88,7 @@ public:
     OperatorType optype;  // if StmtType=STMT_EXP, it has property OperatorType
     Type* type;  
     StmtType stype;
+    ItemType itype;
 
     int int_val;
     char ch_val;
@@ -86,6 +99,7 @@ public:
     static string nodeType2String (NodeType type);
     static string opType2String (OperatorType type);
     static string sType2String (StmtType type);
+    static string iType2String (ItemType type);
 
 public:
     TreeNode(int lineno, NodeType type);

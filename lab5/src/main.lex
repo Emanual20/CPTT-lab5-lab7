@@ -17,9 +17,13 @@ CHAR \'.?\'
 STRING \".+\"
 %%
 
-{BLOCKCOMMENT}  /* do nothing */
-{LINECOMMENT}  /* do nothing */
-
+{BLOCKCOMMENT} {
+    int len=strlen(yytext);
+    for(int i=0;i<len;i++){
+        if(yytext[i]=='\n'||yytext[i]=='\r') lineno++;
+    }
+}
+{LINECOMMENT}  /*do nothing*/
 
 "int" return T_INT;
 "bool" return T_BOOL;
@@ -32,6 +36,8 @@ STRING \".+\"
 "break" return KEY_BREAK;
 "continue" return KEY_CONTINUE;
 "return" return KEY_RETURN;
+"scanf" return KEY_SCANF;
+"printf" return KEY_PRINTF;
 
 "+" return LOP_PLUS;
 "-" return LOP_MINUS;
@@ -53,6 +59,14 @@ STRING \".+\"
 "||" return LOP_LOR;
 
 "=" return LOP_ASSIGN;
+
+"+=" return LOP_PLUSEQ;
+"-=" return LOP_MINUSEQ;
+"%=" return LOP_MODEQ;
+"*=" return LOP_MULEQ;
+"/=" return LOP_DIVEQ;
+
+"," return LOP_COMMA;
 
 "(" return LOP_LPAREN;
 ")" return LOP_RPAREN;
