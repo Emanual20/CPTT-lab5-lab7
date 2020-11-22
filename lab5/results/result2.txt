@@ -1,0 +1,37 @@
+Lno@0       @0 NODE_PROG children:[@1 @11 @26 ]
+Lno@1       @1 NODE_STMT children:[@2 @5 ] STMT: if 
+Lno@1       @2 NODE_EXPR children:[@3 @4 ] optype: == 
+Lno@1       @3 NODE_VAR  a 
+Lno@1       @4 NODE_CONST  1 
+Lno@1       @5 NODE_STMT children:[@6 @7 @8 ] STMT_DECL 
+Lno@1       @6 NODE_TYPE  int 
+Lno@1       @7 NODE_VAR  b 
+Lno@1       @8 NODE_EXPR children:[@9 @10 ] optype: % 
+Lno@1       @9 NODE_CONST  2 
+Lno@1       @10 NODE_CONST  3 
+Lno@2       @11 NODE_STMT children:[@12 @17 @25 ] STMT: ifelse 
+Lno@2       @12 NODE_EXPR children:[@13 @16 ] optype: == 
+Lno@2       @13 NODE_EXPR children:[@14 @15 ] optype: + 
+Lno@2       @14 NODE_VAR  b 
+Lno@2       @15 NODE_CONST  3 
+Lno@2       @16 NODE_CONST  10 
+Lno@2       @17 NODE_STMT children:[@18 @19 @20 ] STMT_DECL 
+Lno@2       @18 NODE_TYPE  int 
+Lno@2       @19 NODE_VAR  c 
+Lno@2       @20 NODE_EXPR children:[@21 @24 ] optype: - 
+Lno@2       @21 NODE_EXPR children:[@22 @23 ] optype: * 
+Lno@2       @22 NODE_CONST  2 
+Lno@2       @23 NODE_CONST  3 
+Lno@2       @24 NODE_CONST  5 
+Lno@2       @25 NODE_STMT children:[] STMT_SKIP 
+Lno@4       @26 NODE_STMT children:[@27 @30 @35 ] STMT: ifelse 
+Lno@4       @27 NODE_EXPR children:[@28 @29 ] optype: == 
+Lno@4       @28 NODE_VAR  a 
+Lno@4       @29 NODE_CONST  1 
+Lno@4       @30 NODE_STMT children:[@31 ] STMT: block{} 
+Lno@4       @31 NODE_STMT children:[@32 @33 @34 ] STMT_DECL 
+Lno@4       @32 NODE_TYPE  int 
+Lno@4       @33 NODE_VAR  d 
+Lno@4       @34 NODE_CONST  7 
+Lno@4       @35 NODE_STMT children:[@36 ] STMT: block{} 
+Lno@4       @36 NODE_STMT children:[] STMT_SKIP 

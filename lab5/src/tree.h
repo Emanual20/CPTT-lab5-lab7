@@ -40,6 +40,9 @@ enum StmtType {
     STMT_SKIP,
     STMT_DECL,
     STMT_EXP,// if StmtType=STMT_EXP, it has property OperatorType
+    STMT_IF,
+    STMT_IFELSE,
+    STMT_BLOCK,
 };
 
 struct TreeNode {

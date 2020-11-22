@@ -25,6 +25,14 @@ STRING \".+\"
 "bool" return T_BOOL;
 "char" return T_CHAR;
 
+"if" return KEY_IF;
+"else" return KEY_ELSE;
+"while" return KEY_WHILE;
+"for" return KEY_FOR;
+"break" return KEY_BREAK;
+"continue" return KEY_CONTINUE;
+"return" return KEY_RETURN;
+
 "+" return LOP_PLUS;
 "-" return LOP_MINUS;
 "!" return LOP_NOT;
@@ -46,6 +54,10 @@ STRING \".+\"
 
 "=" return LOP_ASSIGN;
 
+"(" return LOP_LPAREN;
+")" return LOP_RPAREN;
+"{" return LOP_LBRACE;
+"}" return LOP_RBRACE;
 ";" return SEMICOLON;
 
 {INTEGER} {

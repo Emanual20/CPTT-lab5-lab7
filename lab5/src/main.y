@@ -8,6 +8,8 @@
 %}
 %token T_CHAR T_INT T_STRING T_BOOL 
 
+%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN
+
 %token LOP_MINUS LOP_PLUS LOP_NOT
 %token LOP_MUL LOP_DIV LOP_MOD
 %token LOP_LESS LOP_GREA LOP_LE LOP_GE
@@ -16,7 +18,7 @@
 %token LOP_LOR
 
 %token LOP_ASSIGN 
-
+%token LOP_LPAREN LOP_RPAREN LOP_LBRACE LOP_RBRACE
 %token SEMICOLON
 
 %token IDENTIFIER INTEGER CHAR BOOL STRING
@@ -33,7 +35,17 @@
 %%
 
 program
-: statements {root = new TreeNode(0, NODE_PROG); root->addChild($1);};
+: statements {root = new TreeNode(0, NODE_PROG); root->addChild($1);}
+;
+
+block
+: LOP_LBRACE statements LOP_RBRACE{
+    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
+    node->stype = STMT_BLOCK;
+    node->addChild($2);
+    $$ = node;
+}
+;
 
 statements
 :  statement {$$=$1;}
@@ -43,6 +55,8 @@ statements
 statement
 : SEMICOLON  {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
 | declaration SEMICOLON {$$ = $1;}
+| ifstmt {$$ = $1;}
+| block {$$ = $1;}
 ;
 
 declaration
@@ -63,8 +77,27 @@ declaration
 }
 ;
 
+ifstmt
+: KEY_IF LOP_LPAREN LorExp LOP_RPAREN statement {
+    TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
+    node->stype = STMT_IF;
+    node->addChild($3);
+    node->addChild($5);
+    $$ = node;
+}
+| KEY_IF LOP_LPAREN LorExp LOP_RPAREN statement KEY_ELSE statement {
+    TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
+    node->stype = STMT_IFELSE;
+    node->addChild($3);
+    node->addChild($5);
+    node->addChild($7);
+    $$ = node;
+}
+;
+
 expr
-: LorExp{$$=$1;};
+: LorExp{$$=$1;}
+;
 
 PrimaryExp
 : IDENTIFIER {

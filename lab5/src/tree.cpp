@@ -151,6 +151,7 @@ void TreeNode::printSpecialInfo() {
             cout<<"children:[";
             this->printChildrenId();
             cout<<"]";
+            cout<<this->sType2String(this->stype);
             break;
         }
         case NODE_PROG:{
@@ -170,9 +171,12 @@ void TreeNode::printSpecialInfo() {
 
 string TreeNode::sType2String(StmtType type) {
     switch(type){
-        case STMT_SKIP: return "STMT_SKIP";
-        case STMT_DECL: return "STMT_DECL";
-        case STMT_EXP:  return "STMT_EXP";
+        case STMT_SKIP:   return " STMT_SKIP ";
+        case STMT_DECL:   return " STMT_DECL ";
+        case STMT_EXP:    return " STMT_EXP ";
+        case STMT_IF:     return " STMT: if ";
+        case STMT_IFELSE: return " STMT: ifelse ";
+        case STMT_BLOCK:  return " STMT: block{} ";
     }
     return "unknown type";
 }
