@@ -21,26 +21,25 @@ public:
     ValueType type;
     Type(ValueType valueType);
 public:  
-    /* 如果你要设计复杂类型系统的话，可以修改这一部分 */
-    ValueType* childType; // for union or struct
-    ValueType* paramType;
+    Type* paramType;
     ValueType  retType; // for function
     
-    void addChild(Type* t);
+    void addChild(Type* t); // has been finish in type.cpp
     void addParam(Type* t);
     void addRet(Type* t);
 public:
-    ValueType* sibling; 
+    Type* st_child = nullptr;
+    Type* st_sibling = nullptr; 
 public:
     string getTypeInfo();
 };
 
-// 设置几个常量Type，可以节省空间开销
 static Type* TYPE_INT = new Type(VALUE_INT);
 static Type* TYPE_CHAR = new Type(VALUE_CHAR);
 static Type* TYPE_BOOL = new Type(VALUE_BOOL);
 static Type* TYPE_STRING = new Type(VALUE_STRING);
 static Type* TYPE_VOID = new Type(VALUE_VOID);
+// NOTE: any type of struct user made shall be new in yacc
 
 int getSize(Type* type);
 

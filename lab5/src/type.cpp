@@ -18,3 +18,15 @@ string Type::getTypeInfo() {
     }
     return "?";
 }
+
+void Type::addChild(Type* t){
+    if(this->st_child==nullptr){
+        this->st_child=t;
+        return;
+    }
+    Type* nowchild = this->st_child;
+    for(;nowchild->st_sibling!=nullptr;nowchild=nowchild->st_sibling){
+        ;
+    }
+    nowchild->st_sibling = t;
+}

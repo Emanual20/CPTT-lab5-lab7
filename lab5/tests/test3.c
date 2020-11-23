@@ -1,10 +1,10 @@
 /*
 	I'm level 1 test. without pointer.
 */
-//struct Matrix{
-//	int id;
-//	int arr[10][10];
-//} m1,m2,m3;
+// struct Matrix{
+// 	int id;
+// 	int arr;
+// } m1,m2,m3;
 const int len = 10;
 int t = 0x21;
 int t = 077;

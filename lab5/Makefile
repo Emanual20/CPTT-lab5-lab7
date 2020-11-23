@@ -31,3 +31,4 @@ test:
 	./bin/main tests/test1.c > results/result1.txt
 	./bin/main tests/test2.c > results/result2.txt
 	./bin/main tests/test3.c > results/result3.txt
+	./bin/main tests/test4.c > results/result4.txt

@@ -1,20 +1,20 @@
 Lno@0       @0 NODE_PROG children:[@1 @6 @11 @16 @25 ]
-Lno@8       @1 NODE_STMT children:[@2 @3 ] STMT_CONSTDECL 
+Lno@8       @1 NODE_STMT children:[@2 @3 ] STMT_DECL_CONST 
 Lno@8       @2 NODE_TYPE  int 
 Lno@8       @3 NODE_ITEM children:[@4 @5 ] ITEM_DECL
 Lno@8       @4 NODE_VAR  variable_name: len 
 Lno@8       @5 NODE_CONST  10 
-Lno@9       @6 NODE_STMT children:[@7 @8 ] STMT_VARDECL 
+Lno@9       @6 NODE_STMT children:[@7 @8 ] STMT_DECL_VAR 
 Lno@9       @7 NODE_TYPE  int 
 Lno@9       @8 NODE_ITEM children:[@9 @10 ] ITEM_DECL
 Lno@9       @9 NODE_VAR  variable_name: t 
 Lno@9       @10 NODE_CONST  33 
-Lno@10       @11 NODE_STMT children:[@12 @13 ] STMT_VARDECL 
+Lno@10       @11 NODE_STMT children:[@12 @13 ] STMT_DECL_VAR 
 Lno@10       @12 NODE_TYPE  int 
 Lno@10       @13 NODE_ITEM children:[@14 @15 ] ITEM_DECL
 Lno@10       @14 NODE_VAR  variable_name: t 
 Lno@10       @15 NODE_CONST  63 
-Lno@11       @16 NODE_STMT children:[@17 @18 ] STMT_VARDECL 
+Lno@11       @16 NODE_STMT children:[@17 @18 ] STMT_DECL_VAR 
 Lno@11       @17 NODE_TYPE  int 
 Lno@11       @18 NODE_ITEM children:[@19 @20 ] ITEM_DECL
 Lno@11       @19 NODE_VAR  variable_name: len 
@@ -28,7 +28,7 @@ Lno@12       @26 NODE_VAR  variable_name: main
 Lno@12       @27 NODE_LIST children:[] 
 Lno@14       @28 NODE_STMT children:[@29 @58 ] STMT: block {} 
 Lno@14       @29 NODE_STMT children:[@30 @35 @38 @42 ] STMT: for 
-Lno@14       @30 NODE_STMT children:[@31 @32 ] STMT_VARDECL 
+Lno@14       @30 NODE_STMT children:[@31 @32 ] STMT_DECL_VAR 
 Lno@14       @31 NODE_TYPE  int 
 Lno@14       @32 NODE_ITEM children:[@33 @34 ] ITEM_DECL
 Lno@14       @33 NODE_VAR  variable_name: i 
@@ -42,7 +42,7 @@ Lno@14       @40 NODE_VAR  variable_name: i
 Lno@14       @41 NODE_CONST  1 
 Lno@15       @42 NODE_STMT children:[@43 ] STMT: block {} 
 Lno@15       @43 NODE_STMT children:[@44 @49 @52 @56 ] STMT: for 
-Lno@15       @44 NODE_STMT children:[@45 @46 ] STMT_VARDECL 
+Lno@15       @44 NODE_STMT children:[@45 @46 ] STMT_DECL_VAR 
 Lno@15       @45 NODE_TYPE  int 
 Lno@15       @46 NODE_ITEM children:[@47 @48 ] ITEM_DECL
 Lno@15       @47 NODE_VAR  variable_name: j 
@@ -57,7 +57,7 @@ Lno@15       @55 NODE_CONST  1
 Lno@19       @56 NODE_STMT children:[@57 ] STMT: block {} 
 Lno@19       @57 NODE_STMT  STMT_SKIP 
 Lno@23       @58 NODE_STMT children:[@59 @64 @67 @71 ] STMT: for 
-Lno@23       @59 NODE_STMT children:[@60 @61 ] STMT_VARDECL 
+Lno@23       @59 NODE_STMT children:[@60 @61 ] STMT_DECL_VAR 
 Lno@23       @60 NODE_TYPE  int 
 Lno@23       @61 NODE_ITEM children:[@62 @63 ] ITEM_DECL
 Lno@23       @62 NODE_VAR  variable_name: i 
@@ -71,7 +71,7 @@ Lno@23       @69 NODE_VAR  variable_name: i
 Lno@23       @70 NODE_CONST  1 
 Lno@24       @71 NODE_STMT children:[@72 ] STMT: block {} 
 Lno@24       @72 NODE_STMT children:[@73 @78 @81 @85 ] STMT: for 
-Lno@24       @73 NODE_STMT children:[@74 @75 ] STMT_VARDECL 
+Lno@24       @73 NODE_STMT children:[@74 @75 ] STMT_DECL_VAR 
 Lno@24       @74 NODE_TYPE  int 
 Lno@24       @75 NODE_ITEM children:[@76 @77 ] ITEM_DECL
 Lno@24       @76 NODE_VAR  variable_name: j 

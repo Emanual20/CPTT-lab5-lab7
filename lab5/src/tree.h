@@ -25,6 +25,7 @@ enum StmtType {
     STMT_SKIP,
     STMT_VARDECL,
     STMT_CONSTDECL,
+    STMT_STRUCTDECL,
     STMT_EXP,// if StmtType=STMT_EXP, it has property OperatorType
     STMT_IF,
     STMT_IFELSE,

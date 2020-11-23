@@ -123,18 +123,19 @@ void TreeNode::printSpecialInfo() {
 
 string TreeNode::sType2String(StmtType type) {
     switch(type){
-        case STMT_SKIP:      return " STMT_SKIP ";
-        case STMT_VARDECL:   return " STMT_VARDECL ";
-        case STMT_CONSTDECL: return " STMT_CONSTDECL ";
-        case STMT_EXP:       return " STMT_EXP ";
-        case STMT_IF:        return " STMT: if ";
-        case STMT_IFELSE:    return " STMT: ifelse ";
-        case STMT_BLOCK:     return " STMT: block {} ";
-        case STMT_WHILE:     return " STMT: while ";
-        case STMT_RETURN:    return " STMT: return ";
-        case STMT_BREAK:     return " STMT: break ";
-        case STMT_CONTINUE:  return " STMT: continue ";
-        case STMT_FOR:       return " STMT: for ";
+        case STMT_SKIP:       return " STMT_SKIP ";
+        case STMT_VARDECL:    return " STMT_DECL_VAR ";
+        case STMT_CONSTDECL:  return " STMT_DECL_CONST ";
+        case STMT_STRUCTDECL: return " STMT_DECL_STRUCT ";
+        case STMT_EXP:        return " STMT_EXP ";
+        case STMT_IF:         return " STMT: if ";
+        case STMT_IFELSE:     return " STMT: ifelse ";
+        case STMT_BLOCK:      return " STMT: block {} ";
+        case STMT_WHILE:      return " STMT: while ";
+        case STMT_RETURN:     return " STMT: return ";
+        case STMT_BREAK:      return " STMT: break ";
+        case STMT_CONTINUE:   return " STMT: continue ";
+        case STMT_FOR:        return " STMT: for ";
     }
     return "unknown type";
 }

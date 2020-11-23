@@ -57,6 +57,9 @@ decl
 | constdeclstmt{
     $$ = $1;
 }
+| structdeclstmt{
+    $$ = $1;
+}
 ;
 
 constdeclstmt
@@ -484,10 +487,28 @@ INTEGER: HEX_INTEGER {$$=$1;}
 ;
 
 // WARNING: maybe lost SEMICOLON 
-structdecl
+structdeclstmt
 : KEY_STRUCT IDENTIFIER LOP_LBRACE structdeclist LOP_RBRACE structinitlist{
-    $$ = new TreeNode($2->lineno, NODE_TYPE);
-    //node->type // how to record this!
+    $$ = new TreeNode($2->lineno, NODE_STMT);
+    $$ -> stype = STMT_STRUCTDECL;
+
+    // record the struct params' types
+    TreeNode* tnode = new TreeNode($2->lineno, NODE_TYPE);
+    tnode->type = new Type(COMPOSE_STRUCT);
+
+    // find all it's sons to add into a NODE_TYPE
+    TreeNode* ptr_item = $4->child;
+    for(;ptr_item!=nullptr;ptr_item=ptr_item->sibling){
+        if(ptr_item->nodeType==NODE_ITEM){
+            TreeNode* ptr_stmt = ptr_item -> child;
+            if(ptr_stmt->nodeType==NODE_STMT){
+                tnode->type->addChild(ptr_stmt->type);
+            }
+            else continue;
+        }
+    }
+    $$->addChild(tnode);
+
     $$ -> addChild($2); $$ -> var_name = $2 -> var_name; // has to record struct name
     $$ -> addChild($4);
     $$ -> addChild($6);
@@ -517,12 +538,12 @@ structdecitem
     $$ -> addChild($1); $$->authtype = AUTH_PUBLIC;
 }
 | AutT decl SEMICOLON{
-    $$ = new TreeNode($1->lineno,NODE_ITEM);
-    $$ -> addChild($1); $$->authtype = $1->authtype;
+    $$ = new TreeNode($2->lineno,NODE_ITEM);
+    $$ -> addChild($2); $$->authtype = $1->authtype;
 }
 | AutT funcdef SEMICOLON{
-    $$ = new TreeNode($1->lineno,NODE_ITEM);
-    $$ -> addChild($1); $$->authtype = $1->authtype;
+    $$ = new TreeNode($2->lineno,NODE_ITEM);
+    $$ -> addChild($2); $$->authtype = $1->authtype;
 }
 ;
 
@@ -541,8 +562,9 @@ structinitlist
 structinititem
 : IDENTIFIER{
     $$ = new TreeNode($1->lineno,NODE_ITEM);
-    node->addChild($1);
+    $$-> addChild($1);
 }
+| {$$=new TreeNode(lineno,NODE_ITEM);}
 ;
 
 T: T_INT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;} 
