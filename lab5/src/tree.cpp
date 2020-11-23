@@ -57,8 +57,29 @@ void TreeNode::printAST() {
     if(this->sibling!=nullptr) this->sibling->printAST();
 }
 
+void TreeNode::genSymbolTable(){
+    if(this->nodeID!=0){
+        cerr<<"non-root node can't not call gensymboltable() func!"<<endl;
+        return;
+    }
 
-// You can output more info...
+    // to traversal the parse tree further..
+}
+
+void TreeNode::OpenSymbolTable(){
+    this->is_SymbolTable_on = true;
+}
+
+void TreeNode::CloseSymbolTable(){
+    this->SymTable.clear();
+    this->is_SymbolTable_on = false;
+}
+
+bool TreeNode::IsSymbolTableOn(){
+    return this->is_SymbolTable_on;
+}
+
+
 void TreeNode::printSpecialInfo() {
     switch(this->nodeType){
         case NODE_CONST:{          
@@ -120,6 +141,7 @@ void TreeNode::printSpecialInfo() {
             break;
     }
 }
+
 
 string TreeNode::sType2String(StmtType type) {
     switch(type){

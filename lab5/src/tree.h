@@ -77,6 +77,15 @@ enum ItemType{
 
 struct TreeNode {
 public:
+    // items to record in SymbolTable
+    struct varItem{
+        TreeNode* fDecNode; // a pointer to first declared TreeNode
+    // the node may have lineno, var_name, nodeID
+        Type* type;
+    // the type pointer of this var don't record in fDecNode
+    };
+
+
     int nodeID;
     int lineno;
     NodeType nodeType;
@@ -94,6 +103,7 @@ public:
     void printSpecialInfo();
 
     int genNodeId(int);
+    void genSymbolTable();
 
 public:
     AuthorityType authtype;
@@ -108,6 +118,10 @@ public:
     string str_val;
     string var_name;
 public:
+    // symbol will be off as default
+    bool is_SymbolTable_on = 0;
+    map<string,varItem> SymTable;
+public:
     static string authType2String (AuthorityType authtype);
     static string nodeType2String (NodeType type);
     static string opType2String (OperatorType type);
@@ -116,6 +130,9 @@ public:
 
 public:
     TreeNode(int lineno, NodeType type);
+    void OpenSymbolTable();
+    void CloseSymbolTable();
+    bool IsSymbolTableOn(); 
 };
 
 #endif

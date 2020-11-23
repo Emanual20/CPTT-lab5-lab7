@@ -81,6 +81,8 @@ STRING \".+\"
 
 "(" return LOP_LPAREN;
 ")" return LOP_RPAREN;
+"[" return LOP_LBRKET;
+"]" return LOP_RBRKET;
 "{" return LOP_LBRACE;
 "}" return LOP_RBRACE;
 ";" return SEMICOLON;
