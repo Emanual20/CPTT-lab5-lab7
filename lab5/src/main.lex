@@ -44,6 +44,9 @@ STRING \".+\"
 "scanf" return KEY_SCANF;
 "printf" return KEY_PRINTF;
 "const" return KEY_CONST;
+"struct" return KEY_STRUCT;
+"private" return KEY_PRIVATE;
+"public" return KEY_PUBLIC;
 
 "+" return LOP_PLUS;
 "-" return LOP_MINUS;

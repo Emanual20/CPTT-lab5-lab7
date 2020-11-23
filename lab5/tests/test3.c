@@ -10,7 +10,7 @@ int t = 0x21;
 int t = 077;
 int len = t - 0x15 + 077;
 void main(){
-	//m1.id = 1, m2.id = 2,m3.id=3;
+	//m1.id = 1, m2.id = 2, m3.id=3;
 	for(int i=0;i<len;i+=1){
 		for(int j=0;j<len;j+=1){
 			//m1.arr[i][j]=i;

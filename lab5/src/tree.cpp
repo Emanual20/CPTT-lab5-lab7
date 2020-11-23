@@ -61,8 +61,7 @@ void TreeNode::printAST() {
 // You can output more info...
 void TreeNode::printSpecialInfo() {
     switch(this->nodeType){
-        case NODE_CONST:{
-            
+        case NODE_CONST:{          
             string typeinfo = this->type->getTypeInfo();
             if(typeinfo=="int") cout<<" "<<this->int_val<<" ";
             else if(typeinfo=="char") cout<<" "<<this->ch_val<<" ";
@@ -77,98 +76,9 @@ void TreeNode::printSpecialInfo() {
             break;
         }
         case NODE_EXPR:{
-            cout<<"children:[";
-            this->printChildrenId();
-            cout<<"]";
+            cout<<"children:["; this->printChildrenId(); cout<<"]";
             cout<<" optype: ";
-            switch(this->optype){
-                case OP_EQ:{
-                    cout<<"= ";
-                    break;
-                }
-                case OP_PLUS:{
-                    cout<<"+ ";
-                    break;
-                }
-                case OP_MINUS:{
-                    cout<<"- ";
-                    break;
-                }
-                case OP_NOT:{
-                    cout<<"! ";
-                    break;
-                }
-                case OP_MUL:{
-                    cout<<"* ";
-                    break;
-                }
-                case OP_DIV:{
-                    cout<<"/ ";
-                    break;
-                }
-                case OP_MOD:{
-                    cout<<"% ";
-                    break;
-                }
-                case OP_LESS:{
-                    cout<<"< ";
-                    break;
-                }
-                case OP_GREA:{
-                    cout<<"> ";
-                    break;
-                }
-                case OP_LE:{
-                    cout<<"<= ";
-                    break;
-                }
-                case OP_GE:{
-                    cout<<">= ";
-                    break;
-                }
-                case OP_EEQ:{
-                    cout<<"== ";
-                    break;
-                }
-                case OP_NEQ:{
-                    cout<<"!= ";
-                    break;
-                }
-                case OP_LAND:{
-                    cout<<"&& ";
-                    break;
-                }
-                case OP_LOR:{
-                    cout<<"|| ";
-                    break;
-                }
-                case OP_LVAL:{
-                    cout<<"lval expr ";
-                    break;
-                }
-                case OP_PLUSEQ:{
-                    cout<<"+= ";
-                    break;
-                }
-                case OP_MINUSEQ:{
-                    cout<<"-= ";
-                    break;
-                }
-                case OP_MODEQ:{
-                    cout<<"%= ";
-                    break;
-                }
-                case OP_MULEQ:{
-                    cout<<"*= ";
-                    break;
-                }
-                case OP_DIVEQ:{
-                    cout<<"/= ";
-                    break; 
-                }
-                default:
-                    break;
-            }
+            cout<<this->opType2String(this->optype);
             break;
         }
         case NODE_TYPE:{
@@ -177,17 +87,13 @@ void TreeNode::printSpecialInfo() {
         }
         case NODE_STMT:{
             if(this->stype!=STMT_SKIP){
-                cout<<"children:[";
-                this->printChildrenId();
-                cout<<"]";
+                cout<<"children:["; this->printChildrenId(); cout<<"]";
             }
             cout<<this->sType2String(this->stype);
             break;
         }
         case NODE_PROG:{
-            cout<<"children:[";
-            this->printChildrenId();
-            cout<<"]";
+            cout<<"children:["; this->printChildrenId(); cout<<"]";
             break;
         }
         case NODE_ITEM:{
@@ -256,6 +162,43 @@ string TreeNode::iType2String (ItemType type){
     switch(type){
         case ITEM_DECL:   return "ITEM_DECL";
         case ITEM_SPF:    return "ITEM_SPF";
+        case ITEM_UFUNC:  return "ITEM_UFUNC";
     }
     return "unknown type";
+}
+
+string TreeNode::opType2String (OperatorType type){
+    switch(type){
+        case OP_EQ:      return "= ";
+        case OP_PLUS:    return "+ ";
+        case OP_MINUS:   return "- ";
+        case OP_NOT:     return "! ";
+        case OP_MUL:     return "* ";
+        case OP_DIV:     return "/ ";
+        case OP_MOD:     return "% ";
+        case OP_LESS:    return "< ";
+        case OP_GREA:    return "> ";
+        case OP_LE:      return "<= ";               
+        case OP_GE:      return ">= ";                  
+        case OP_EEQ:     return "== ";                 
+        case OP_NEQ:     return "!= ";                    
+        case OP_LAND:    return "&& ";
+        case OP_LOR:     return "|| ";
+        case OP_LVAL:    return "lval expr ";
+        case OP_PLUSEQ:  return "+= ";
+        case OP_MINUSEQ: return "-= ";
+        case OP_MODEQ:   return "%= ";
+        case OP_MULEQ:   return "*= ";
+        case OP_DIVEQ:   return "/= ";
+        default:         return "unknown operator..!";
+    }
+}
+
+string TreeNode::authType2String (AuthorityType type){
+    switch(type){
+        case AUTH_PUBLIC:       return "public ";
+        case AUTH_PRIVATE:      return "private ";
+        case AUTH_PROTECTED:    return "protected ";
+        default:                return "unknown authority..!";
+    }
 }

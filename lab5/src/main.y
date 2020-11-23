@@ -8,7 +8,7 @@
 %}
 %token T_CHAR T_INT T_STRING T_BOOL T_VOID
 
-%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST
+%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST KEY_STRUCT KEY_PUBLIC KEY_PRIVATE
 
 %token LOP_MINUS LOP_PLUS LOP_NOT
 %token LOP_MUL LOP_DIV LOP_MOD
@@ -483,10 +483,76 @@ INTEGER: HEX_INTEGER {$$=$1;}
 | OCT_INTEGER {$$=$1;}
 ;
 
+// WARNING: maybe lost SEMICOLON 
+structdecl
+: KEY_STRUCT IDENTIFIER LOP_LBRACE structdeclist LOP_RBRACE structinitlist{
+    $$ = new TreeNode($2->lineno, NODE_TYPE);
+    //node->type // how to record this!
+    $$ -> addChild($2); $$ -> var_name = $2 -> var_name; // has to record struct name
+    $$ -> addChild($4);
+    $$ -> addChild($6);
+}
+;
+
+structdeclist
+: structdecitem{
+    TreeNode* node = new TreeNode(lineno, NODE_LIST);
+    node->addChild($1);
+    $$ = node;
+}
+| structdeclist structdecitem {
+    $$ = $1;
+    $$ -> addChild($2);
+}
+;
+
+// to record the privacy: public/private maybe further expand
+structdecitem
+: decl SEMICOLON{
+    $$ = new TreeNode($1->lineno,NODE_ITEM);
+    $$ -> addChild($1); $$->authtype = AUTH_PUBLIC;
+}
+| funcdef SEMICOLON{
+    $$ = new TreeNode($1->lineno,NODE_ITEM);
+    $$ -> addChild($1); $$->authtype = AUTH_PUBLIC;
+}
+| AutT decl SEMICOLON{
+    $$ = new TreeNode($1->lineno,NODE_ITEM);
+    $$ -> addChild($1); $$->authtype = $1->authtype;
+}
+| AutT funcdef SEMICOLON{
+    $$ = new TreeNode($1->lineno,NODE_ITEM);
+    $$ -> addChild($1); $$->authtype = $1->authtype;
+}
+;
+
+structinitlist
+: structinititem {
+    $$ = new TreeNode($1->lineno,NODE_LIST);
+    $$->addChild($1);
+}
+| structinitlist LOP_COMMA structinititem{
+    $$ = $1;
+    $$->addChild($3);
+}
+;
+
+// need to expand for further array
+structinititem
+: IDENTIFIER{
+    $$ = new TreeNode($1->lineno,NODE_ITEM);
+    node->addChild($1);
+}
+;
+
 T: T_INT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;} 
 | T_CHAR {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_CHAR;}
 | T_BOOL {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_BOOL;}
 | T_STRING {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_STRING;}
+;
+
+AutT : KEY_PUBLIC {$$ = new TreeNode(lineno, NODE_AUTH); $$->authtype = AUTH_PUBLIC;}
+| KEY_PRIVATE {$$ = new TreeNode(lineno, NODE_AUTH); $$->authtype = AUTH_PRIVATE;}
 ;
 
 UnaryOp: LOP_PLUS {$$ = new TreeNode(lineno, NODE_OP); $$->optype=OP_PLUS;}

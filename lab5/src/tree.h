@@ -11,7 +11,8 @@ enum NodeType
     NODE_EXPR,
     NODE_TYPE,
 
-    NODE_OP,
+    NODE_AUTH, // node auth do not need to be add to parse tree, because it has been record in authtype;
+    NODE_OP, // node_op do not need to be add to parse tree, because it has been record in optype;
     NODE_ITEM,
     NODE_LIST, // for some func para list
     NODE_FUNC,
@@ -20,8 +21,28 @@ enum NodeType
     NODE_PROG,
 };
 
-enum OperatorType
-{
+enum StmtType {
+    STMT_SKIP,
+    STMT_VARDECL,
+    STMT_CONSTDECL,
+    STMT_EXP,// if StmtType=STMT_EXP, it has property OperatorType
+    STMT_IF,
+    STMT_IFELSE,
+    STMT_BLOCK,
+    STMT_WHILE,
+    STMT_RETURN,
+    STMT_BREAK,
+    STMT_CONTINUE,
+    STMT_FOR,
+};
+
+enum AuthorityType{
+    AUTH_PUBLIC,
+    AUTH_PRIVATE,
+    AUTH_PROTECTED,
+};
+
+enum OperatorType{
     OP_EQ,  // =
     OP_PLUS, // +
     OP_MINUS, // -
@@ -43,21 +64,6 @@ enum OperatorType
     OP_MODEQ, // %=
     OP_MULEQ, // *=
     OP_DIVEQ, // /=
-};
-
-enum StmtType {
-    STMT_SKIP,
-    STMT_VARDECL,
-    STMT_CONSTDECL,
-    STMT_EXP,// if StmtType=STMT_EXP, it has property OperatorType
-    STMT_IF,
-    STMT_IFELSE,
-    STMT_BLOCK,
-    STMT_WHILE,
-    STMT_RETURN,
-    STMT_BREAK,
-    STMT_CONTINUE,
-    STMT_FOR,
 };
 
 enum ItemType{
@@ -87,6 +93,7 @@ public:
     int genNodeId(int);
 
 public:
+    AuthorityType authtype;
     OperatorType optype;  // if StmtType=STMT_EXP, it has property OperatorType
     Type* type;  
     StmtType stype;
@@ -98,6 +105,7 @@ public:
     string str_val;
     string var_name;
 public:
+    static string authType2String (AuthorityType authtype);
     static string nodeType2String (NodeType type);
     static string opType2String (OperatorType type);
     static string sType2String (StmtType type);
