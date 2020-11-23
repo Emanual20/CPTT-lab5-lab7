@@ -1,8 +1,0 @@
-syntax error at line 6
-Lno@0       @0 NODE_PROG children:[@1 ]
-Lno@5       @1 NODE_STMT children:[@2 @3 @5 ] STMT_DECL 
-Lno@5       @2 NODE_TYPE  int 
-Lno@5       @3 NODE_ITEM children:[@4 ] ITEM_DECL
-Lno@5       @4 NODE_VAR  variable_name: a 
-Lno@5       @5 NODE_ITEM children:[@6 ] ITEM_DECL
-Lno@5       @6 NODE_VAR  variable_name: s 

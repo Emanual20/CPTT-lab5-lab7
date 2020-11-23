@@ -1,1 +1,110 @@
-syntax error at line 1
+Lno@0       @0 NODE_PROG children:[@1 @6 ]
+Lno@4       @1 NODE_STMT children:[@2 @3 ] STMT_VARDECL 
+Lno@4       @2 NODE_TYPE  int 
+Lno@4       @3 NODE_ITEM children:[@4 @5 ] ITEM_DECL
+Lno@4       @4 NODE_VAR  variable_name: a 
+Lno@4       @5 NODE_CONST  1 
+Lno@4       @6 NODE_FUNC children:[@7 @8 @9 ]  func_name: main
+Lno@5       @7 NODE_VAR  variable_name: main 
+Lno@5       @8 NODE_LIST children:[] 
+Lno@6       @9 NODE_STMT children:[@10 @16 @20 @24 @28 @33 ] STMT: block {} 
+Lno@6       @10 NODE_STMT children:[@11 @12 @14 ] STMT_VARDECL 
+Lno@6       @11 NODE_TYPE  int 
+Lno@6       @12 NODE_ITEM children:[@13 ] ITEM_DECL
+Lno@6       @13 NODE_VAR  variable_name: a 
+Lno@6       @14 NODE_ITEM children:[@15 ] ITEM_DECL
+Lno@6       @15 NODE_VAR  variable_name: s 
+Lno@7       @16 NODE_EXPR children:[@17 @19 ] optype: = 
+Lno@7       @17 NODE_EXPR children:[@18 ] optype: lval expr 
+Lno@7       @18 NODE_VAR  variable_name: a 
+Lno@7       @19 NODE_CONST  10 
+Lno@8       @20 NODE_EXPR children:[@21 @23 ] optype: = 
+Lno@8       @21 NODE_EXPR children:[@22 ] optype: lval expr 
+Lno@8       @22 NODE_VAR  variable_name: s 
+Lno@8       @23 NODE_CONST  0 
+Lno@9       @24 NODE_STMT children:[@25 @26 ] STMT_VARDECL 
+Lno@9       @25 NODE_TYPE  char 
+Lno@9       @26 NODE_ITEM children:[@27 ] ITEM_DECL
+Lno@9       @27 NODE_VAR  variable_name: ch 
+Lno@10       @28 NODE_FUNC children:[@29 @30 ]  func_name: scanf
+Lno@10       @29 NODE_CONST  "%d" 
+Lno@10       @30 NODE_LIST children:[@31 ] 
+Lno@10       @31 NODE_ITEM children:[@32 ] ITEM_SPF
+Lno@10       @32 NODE_VAR  variable_name: ch 
+Lno@11       @33 NODE_STMT children:[@34 @52 ] STMT: while 
+Lno@11       @34 NODE_EXPR children:[@35 @42 ] optype: || 
+Lno@11       @35 NODE_EXPR children:[@36 @39 ] optype: && 
+Lno@11       @36 NODE_EXPR children:[@37 @38 ] optype: > 
+Lno@11       @37 NODE_VAR  variable_name: a 
+Lno@11       @38 NODE_CONST  0 
+Lno@11       @39 NODE_EXPR children:[@40 @41 ] optype: <= 
+Lno@11       @40 NODE_VAR  variable_name: a 
+Lno@11       @41 NODE_CONST  10 
+Lno@11       @42 NODE_EXPR children:[@43 @48 ] optype: && 
+Lno@11       @43 NODE_EXPR children:[@44 @47 ] optype: == 
+Lno@11       @44 NODE_EXPR children:[@45 @46 ] optype: % 
+Lno@11       @45 NODE_VAR  variable_name: a 
+Lno@11       @46 NODE_CONST  100 
+Lno@11       @47 NODE_CONST  10 
+Lno@11       @48 NODE_EXPR children:[@49 @51 ] optype: == 
+Lno@11       @49 NODE_EXPR children:[@50 ] optype: ! 
+Lno@11       @50 NODE_VAR  variable_name: a 
+Lno@11       @51 NODE_CONST  10 
+Lno@12       @52 NODE_STMT children:[@53 @57 @61 @65 @69 ] STMT: block {} 
+Lno@12       @53 NODE_EXPR children:[@54 @56 ] optype: -= 
+Lno@12       @54 NODE_EXPR children:[@55 ] optype: lval expr 
+Lno@12       @55 NODE_VAR  variable_name: a 
+Lno@12       @56 NODE_CONST  1 
+Lno@13       @57 NODE_STMT children:[@58 @59 ] STMT_VARDECL 
+Lno@13       @58 NODE_TYPE  int 
+Lno@13       @59 NODE_ITEM children:[@60 ] ITEM_DECL
+Lno@13       @60 NODE_VAR  variable_name: a 
+Lno@14       @61 NODE_EXPR children:[@62 @64 ] optype: = 
+Lno@14       @62 NODE_EXPR children:[@63 ] optype: lval expr 
+Lno@14       @63 NODE_VAR  variable_name: a 
+Lno@14       @64 NODE_CONST  10 
+Lno@15       @65 NODE_EXPR children:[@66 @68 ] optype: += 
+Lno@15       @66 NODE_EXPR children:[@67 ] optype: lval expr 
+Lno@15       @67 NODE_VAR  variable_name: s 
+Lno@15       @68 NODE_CONST  1 
+Lno@16       @69 NODE_STMT children:[@70 @75 ] STMT: if 
+Lno@16       @70 NODE_EXPR children:[@71 @73 ] optype: < 
+Lno@16       @71 NODE_EXPR children:[@72 ] optype: - 
+Lno@16       @72 NODE_VAR  variable_name: s 
+Lno@16       @73 NODE_EXPR children:[@74 ] optype: - 
+Lno@16       @74 NODE_CONST  10 
+Lno@17       @75 NODE_STMT children:[@76 @83 @87 @91 ] STMT: block {} 
+Lno@17       @76 NODE_FUNC children:[@77 @78 ]  func_name: printf
+Lno@17       @77 NODE_CONST  "%dresult is: %d\n" 
+Lno@17       @78 NODE_LIST children:[@79 @81 ] 
+Lno@17       @79 NODE_ITEM children:[@80 ] ITEM_SPF
+Lno@17       @80 NODE_VAR  variable_name: a 
+Lno@17       @81 NODE_ITEM children:[@82 ] ITEM_SPF
+Lno@17       @82 NODE_VAR  variable_name: s 
+Lno@18       @83 NODE_STMT children:[@84 @85 ] STMT_VARDECL 
+Lno@18       @84 NODE_TYPE  int 
+Lno@18       @85 NODE_ITEM children:[@86 ] ITEM_DECL
+Lno@18       @86 NODE_VAR  variable_name: b 
+Lno@19       @87 NODE_EXPR children:[@88 @90 ] optype: = 
+Lno@19       @88 NODE_EXPR children:[@89 ] optype: lval expr 
+Lno@19       @89 NODE_VAR  variable_name: b 
+Lno@19       @90 NODE_CONST  10 
+Lno@20       @91 NODE_STMT children:[@92 @97 @100 @104 ] STMT: for 
+Lno@20       @92 NODE_STMT children:[@93 @94 ] STMT_VARDECL 
+Lno@20       @93 NODE_TYPE  int 
+Lno@20       @94 NODE_ITEM children:[@95 @96 ] ITEM_DECL
+Lno@20       @95 NODE_VAR  variable_name: i 
+Lno@20       @96 NODE_CONST  0 
+Lno@20       @97 NODE_EXPR children:[@98 @99 ] optype: < 
+Lno@20       @98 NODE_VAR  variable_name: i 
+Lno@20       @99 NODE_VAR  variable_name: b 
+Lno@20       @100 NODE_EXPR children:[@101 @103 ] optype: += 
+Lno@20       @101 NODE_EXPR children:[@102 ] optype: lval expr 
+Lno@20       @102 NODE_VAR  variable_name: i 
+Lno@20       @103 NODE_CONST  1 
+Lno@21       @104 NODE_STMT children:[@105 ] STMT: block {} 
+Lno@21       @105 NODE_FUNC children:[@106 @107 ]  func_name: printf
+Lno@21       @106 NODE_CONST  "Have fun: %d\n" 
+Lno@21       @107 NODE_LIST children:[@108 ] 
+Lno@21       @108 NODE_ITEM children:[@109 ] ITEM_SPF
+Lno@21       @109 NODE_VAR  variable_name: i 

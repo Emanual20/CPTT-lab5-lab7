@@ -11,6 +11,7 @@ WHILTESPACE [[:blank:]]
 
 INTEGER [0-9]+
 
+
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 
 CHAR \'.?\'
@@ -40,6 +41,7 @@ STRING \".+\"
 "return" return KEY_RETURN;
 "scanf" return KEY_SCANF;
 "printf" return KEY_PRINTF;
+"const" return KEY_CONST;
 
 "+" return LOP_PLUS;
 "-" return LOP_MINUS;

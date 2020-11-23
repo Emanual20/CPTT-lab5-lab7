@@ -8,7 +8,7 @@
 %}
 %token T_CHAR T_INT T_STRING T_BOOL T_VOID
 
-%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF
+%token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST
 
 %token LOP_MINUS LOP_PLUS LOP_NOT
 %token LOP_MUL LOP_DIV LOP_MOD
@@ -38,11 +38,8 @@
 
 Program: CompUnits{root = new TreeNode(0,NODE_PROG); root->addChild($1);};
 
-CompUnits
-: CompUnit{
-    $$=$1;
-}
-| CompUnits CompUnit{
+CompUnits: CompUnit {$$=$1;}
+| CompUnits CompUnit {
     $$=$1; $$->addSibling($2);
 }
 ;
@@ -52,35 +49,56 @@ CompUnit
 | funcdef {$$ = $1;}
 ;
 
-statement
-: SEMICOLON  {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
-| block {$$ = $1;}
-| ifstmt {$$ = $1;}
-| forstmt {$$ = $1;}
-| whilestmt {$$ = $1;}
-| returnstmt SEMICOLON {$$ = $1;}
-| KEY_BREAK SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
-| KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
-| assignstmt SEMICOLON {$$ = $1;}
-| funccall {$$=$1;}
-;
-
 // for further const decl later
 decl
-: declarestmt{
+: vardeclstmt{
+    $$ = $1;
+}
+| constdeclstmt{
     $$ = $1;
 }
 ;
 
-declarestmt
+constdeclstmt
+: KEY_CONST T constdef{
+    TreeNode* node = new TreeNode($2->lineno, NODE_STMT);
+    node->stype = STMT_CONSTDECL;
+    node->addChild($2);
+    node->addChild($3);
+    $$ = node;  
+}
+| constdeclstmt LOP_COMMA constdef{
+    $1->addChild($3);
+    $$ = $1;
+}
+;
+
+constdef
+: IDENTIFIER LOP_ASSIGN constinitval{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+} 
+;
+
+// for further expand to array
+constinitval
+: LorExp{
+    $$ = $1;
+}
+;
+
+vardeclstmt
 : T declareitem{  // declare and init
     TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
-    node->stype = STMT_DECL;
+    node->stype = STMT_VARDECL;
     node->addChild($1);
     node->addChild($2);
     $$ = node;   
 } 
-| declarestmt LOP_COMMA declareitem {
+| vardeclstmt LOP_COMMA declareitem {
     $1->addChild($3);
     $$ = $1;
 }
@@ -174,7 +192,7 @@ block
 ;
 
 blocklist
-: decl{
+: decl SEMICOLON {
     //maybe further replace by NODE_LIST
     $$ = new TreeNode($1->lineno, NODE_STMT);
     $$->stype = STMT_BLOCK;
@@ -185,7 +203,7 @@ blocklist
     $$->stype = STMT_BLOCK;
     $$->addChild($1);
 }
-| blocklist decl{
+| blocklist decl SEMICOLON {
     $$ = $1;
     $$->addChild($2);
 }
@@ -193,6 +211,20 @@ blocklist
     $$ = $1;
     $$->addChild($2);
 }
+;
+
+
+statement
+: SEMICOLON  {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_SKIP;}
+| block {$$ = $1;}
+| ifstmt {$$ = $1;}
+| forstmt {$$ = $1;}
+| whilestmt {$$ = $1;}
+| returnstmt SEMICOLON {$$ = $1;}
+| KEY_BREAK SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
+| KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
+| assignstmt SEMICOLON {$$ = $1;}
+| funccall {$$=$1;}
 ;
 
 funccall
@@ -243,7 +275,7 @@ spflist
 ;
 
 forstmt
-: KEY_FOR LOP_LPAREN declarestmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+: KEY_FOR LOP_LPAREN vardeclstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
     node->addChild($3); node->addChild($5); node->addChild($7);
