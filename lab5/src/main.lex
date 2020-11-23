@@ -9,7 +9,9 @@ LINECOMMENT \/\/[^\n]*
 EOL	(\r\n|\r|\n)
 WHILTESPACE [[:blank:]]
 
-INTEGER [0-9]+
+HEX_INTEGER 0(x|X)[0-9a-fA-F]+
+DEC_INTEGER 0|[1-9][0-9]*
+OCT_INTEGER 0[0-7]+
 
 
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
@@ -78,12 +80,61 @@ STRING \".+\"
 "}" return LOP_RBRACE;
 ";" return SEMICOLON;
 
-{INTEGER} {
+{HEX_INTEGER} {
+    TreeNode* node = new TreeNode(lineno, NODE_CONST);
+    node->type = TYPE_INT;
+
+    int decval=0;
+    // transform hexa int to dec int to store
+    int len = strlen(yytext), flag=0;
+    for(int i=2;i<len;i++){
+        // ignore 0 ahead
+        if(yytext[i]!='0') flag=1;
+        if(flag==0&&yytext[i]=='0') continue;
+
+        decval*=16;
+
+        if(yytext[i]=='A'||yytext[i]=='a') decval+=10;
+        else if(yytext[i]=='B'||yytext[i]=='b') decval+=11;
+        else if(yytext[i]=='C'||yytext[i]=='c') decval+=12;
+        else if(yytext[i]=='D'||yytext[i]=='d') decval+=13;
+        else if(yytext[i]=='E'||yytext[i]=='e') decval+=14;
+        else if(yytext[i]=='F'||yytext[i]=='f') decval+=15;
+        else decval+=(yytext[i]-'0');
+    }
+    node->int_val = decval;
+
+    yylval = node;
+    return HEX_INTEGER;
+}
+
+{DEC_INTEGER} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_INT;
     node->int_val = atoi(yytext);
     yylval = node;
-    return INTEGER;
+    return DEC_INTEGER;
+}
+
+{OCT_INTEGER} {
+    TreeNode* node = new TreeNode(lineno, NODE_CONST);
+    node->type = TYPE_INT;
+
+    int decval=0;
+    // transform oct int to dec int to store
+    int len = strlen(yytext), flag=0;
+    for(int i=1;i<len;i++){
+        // ignore 0 ahead
+        if(yytext[i]!='0') flag=1;
+        if(flag==0&&yytext[i]=='0') continue;
+
+        decval*=8;
+        decval+=(yytext[i]-'0');
+    }
+    node->int_val = decval;
+
+    yylval = node;
+    return OCT_INTEGER;
 }
 
 {IDENTIFIER} {

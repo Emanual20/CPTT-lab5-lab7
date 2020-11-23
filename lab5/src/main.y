@@ -21,7 +21,7 @@
 %token LOP_COMMA LOP_LPAREN LOP_RPAREN LOP_LBRACE LOP_RBRACE
 %token SEMICOLON
 
-%token IDENTIFIER INTEGER CHAR BOOL STRING
+%token IDENTIFIER HEX_INTEGER DEC_INTEGER OCT_INTEGER CHAR BOOL STRING
 
 
 %right LOP_UMINUS LOP_UPLUS LOP_NOT
@@ -476,6 +476,11 @@ LorExp
     node->addChild($3);
     $$ = node;  
 }
+;
+
+INTEGER: HEX_INTEGER {$$=$1;}
+| DEC_INTEGER {$$=$1;}
+| OCT_INTEGER {$$=$1;}
 ;
 
 T: T_INT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;} 
