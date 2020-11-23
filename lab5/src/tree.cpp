@@ -170,6 +170,7 @@ string TreeNode::iType2String (ItemType type){
 
 string TreeNode::opType2String (OperatorType type){
     switch(type){
+        case OP_POINT:   return ". ";
         case OP_EQ:      return "= ";
         case OP_PLUS:    return "+ ";
         case OP_MINUS:   return "- ";
@@ -191,6 +192,7 @@ string TreeNode::opType2String (OperatorType type){
         case OP_MODEQ:   return "%= ";
         case OP_MULEQ:   return "*= ";
         case OP_DIVEQ:   return "/= ";
+        case OP_COMMA:   return ", ";
         default:         return "unknown operator..!";
     }
 }

@@ -48,6 +48,8 @@ STRING \".+\"
 "private" return KEY_PRIVATE;
 "public" return KEY_PUBLIC;
 
+"." return LOP_POINT;
+
 "+" return LOP_PLUS;
 "-" return LOP_MINUS;
 "!" return LOP_NOT;

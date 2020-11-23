@@ -52,62 +52,87 @@ Lno@13       @50 NODE_CONST  10
 Lno@13       @51 NODE_FUNC children:[@52 @53 @54 ]  func_name: main
 Lno@14       @52 NODE_VAR  variable_name: main 
 Lno@14       @53 NODE_LIST children:[] 
-Lno@16       @54 NODE_STMT children:[@55 @84 ] STMT: block {} 
-Lno@16       @55 NODE_STMT children:[@56 @61 @64 @68 ] STMT: for 
-Lno@16       @56 NODE_STMT children:[@57 @58 ] STMT_DECL_VAR 
-Lno@16       @57 NODE_TYPE  int 
-Lno@16       @58 NODE_ITEM children:[@59 @60 ] ITEM_DECL
-Lno@16       @59 NODE_VAR  variable_name: i 
-Lno@16       @60 NODE_CONST  0 
-Lno@16       @61 NODE_EXPR children:[@62 @63 ] optype: < 
-Lno@16       @62 NODE_VAR  variable_name: i 
-Lno@16       @63 NODE_VAR  variable_name: len 
-Lno@16       @64 NODE_EXPR children:[@65 @67 ] optype: += 
-Lno@16       @65 NODE_EXPR children:[@66 ] optype: lval expr 
-Lno@16       @66 NODE_VAR  variable_name: i 
-Lno@16       @67 NODE_CONST  1 
-Lno@17       @68 NODE_STMT children:[@69 ] STMT: block {} 
-Lno@17       @69 NODE_STMT children:[@70 @75 @78 @82 ] STMT: for 
-Lno@17       @70 NODE_STMT children:[@71 @72 ] STMT_DECL_VAR 
-Lno@17       @71 NODE_TYPE  int 
-Lno@17       @72 NODE_ITEM children:[@73 @74 ] ITEM_DECL
-Lno@17       @73 NODE_VAR  variable_name: j 
-Lno@17       @74 NODE_CONST  0 
-Lno@17       @75 NODE_EXPR children:[@76 @77 ] optype: < 
-Lno@17       @76 NODE_VAR  variable_name: j 
-Lno@17       @77 NODE_VAR  variable_name: len 
-Lno@17       @78 NODE_EXPR children:[@79 @81 ] optype: += 
-Lno@17       @79 NODE_EXPR children:[@80 ] optype: lval expr 
-Lno@17       @80 NODE_VAR  variable_name: j 
-Lno@17       @81 NODE_CONST  1 
-Lno@18       @82 NODE_STMT children:[@83 ] STMT: block {} 
-Lno@18       @83 NODE_STMT  STMT_SKIP 
-Lno@22       @84 NODE_STMT children:[@85 @90 @93 @97 ] STMT: for 
-Lno@22       @85 NODE_STMT children:[@86 @87 ] STMT_DECL_VAR 
-Lno@22       @86 NODE_TYPE  int 
-Lno@22       @87 NODE_ITEM children:[@88 @89 ] ITEM_DECL
-Lno@22       @88 NODE_VAR  variable_name: i 
-Lno@22       @89 NODE_CONST  0 
-Lno@22       @90 NODE_EXPR children:[@91 @92 ] optype: < 
-Lno@22       @91 NODE_VAR  variable_name: i 
-Lno@22       @92 NODE_VAR  variable_name: len 
-Lno@22       @93 NODE_EXPR children:[@94 @96 ] optype: += 
-Lno@22       @94 NODE_EXPR children:[@95 ] optype: lval expr 
-Lno@22       @95 NODE_VAR  variable_name: i 
-Lno@22       @96 NODE_CONST  1 
-Lno@23       @97 NODE_STMT children:[@98 ] STMT: block {} 
-Lno@23       @98 NODE_STMT children:[@99 @104 @107 @111 ] STMT: for 
-Lno@23       @99 NODE_STMT children:[@100 @101 ] STMT_DECL_VAR 
-Lno@23       @100 NODE_TYPE  int 
-Lno@23       @101 NODE_ITEM children:[@102 @103 ] ITEM_DECL
-Lno@23       @102 NODE_VAR  variable_name: j 
-Lno@23       @103 NODE_CONST  0 
-Lno@23       @104 NODE_EXPR children:[@105 @106 ] optype: < 
-Lno@23       @105 NODE_VAR  variable_name: j 
-Lno@23       @106 NODE_VAR  variable_name: len 
-Lno@23       @107 NODE_EXPR children:[@108 @110 ] optype: += 
-Lno@23       @108 NODE_EXPR children:[@109 ] optype: lval expr 
-Lno@23       @109 NODE_VAR  variable_name: j 
-Lno@23       @110 NODE_CONST  1 
-Lno@24       @111 NODE_STMT children:[@112 ] STMT: block {} 
-Lno@24       @112 NODE_STMT  STMT_SKIP 
+Lno@15       @54 NODE_STMT children:[@55 @60 @65 @70 @99 ] STMT: block {} 
+Lno@15       @55 NODE_EXPR children:[@56 @59 ] optype: = 
+Lno@15       @56 NODE_EXPR children:[@57 @58 ] optype: . 
+Lno@15       @57 NODE_VAR  variable_name: m1 
+Lno@15       @58 NODE_VAR  variable_name: id 
+Lno@15       @59 NODE_CONST  1 
+Lno@15       @60 NODE_EXPR children:[@61 @64 ] optype: = 
+Lno@15       @61 NODE_EXPR children:[@62 @63 ] optype: . 
+Lno@15       @62 NODE_VAR  variable_name: m2 
+Lno@15       @63 NODE_VAR  variable_name: id 
+Lno@15       @64 NODE_CONST  2 
+Lno@15       @65 NODE_EXPR children:[@66 @69 ] optype: = 
+Lno@15       @66 NODE_EXPR children:[@67 @68 ] optype: . 
+Lno@15       @67 NODE_VAR  variable_name: m3 
+Lno@15       @68 NODE_VAR  variable_name: id 
+Lno@15       @69 NODE_CONST  3 
+Lno@16       @70 NODE_STMT children:[@71 @76 @79 @83 ] STMT: for 
+Lno@16       @71 NODE_STMT children:[@72 @73 ] STMT_DECL_VAR 
+Lno@16       @72 NODE_TYPE  int 
+Lno@16       @73 NODE_ITEM children:[@74 @75 ] ITEM_DECL
+Lno@16       @74 NODE_VAR  variable_name: i 
+Lno@16       @75 NODE_CONST  0 
+Lno@16       @76 NODE_EXPR children:[@77 @78 ] optype: < 
+Lno@16       @77 NODE_VAR  variable_name: i 
+Lno@16       @78 NODE_VAR  variable_name: len 
+Lno@16       @79 NODE_EXPR children:[@80 @82 ] optype: += 
+Lno@16       @80 NODE_EXPR children:[@81 ] optype: lval expr 
+Lno@16       @81 NODE_VAR  variable_name: i 
+Lno@16       @82 NODE_CONST  1 
+Lno@17       @83 NODE_STMT children:[@84 ] STMT: block {} 
+Lno@17       @84 NODE_STMT children:[@85 @90 @93 @97 ] STMT: for 
+Lno@17       @85 NODE_STMT children:[@86 @87 ] STMT_DECL_VAR 
+Lno@17       @86 NODE_TYPE  int 
+Lno@17       @87 NODE_ITEM children:[@88 @89 ] ITEM_DECL
+Lno@17       @88 NODE_VAR  variable_name: j 
+Lno@17       @89 NODE_CONST  0 
+Lno@17       @90 NODE_EXPR children:[@91 @92 ] optype: < 
+Lno@17       @91 NODE_VAR  variable_name: j 
+Lno@17       @92 NODE_VAR  variable_name: len 
+Lno@17       @93 NODE_EXPR children:[@94 @96 ] optype: += 
+Lno@17       @94 NODE_EXPR children:[@95 ] optype: lval expr 
+Lno@17       @95 NODE_VAR  variable_name: j 
+Lno@17       @96 NODE_CONST  1 
+Lno@18       @97 NODE_STMT children:[@98 ] STMT: block {} 
+Lno@18       @98 NODE_STMT  STMT_SKIP 
+Lno@22       @99 NODE_STMT children:[@100 @105 @108 @112 ] STMT: for 
+Lno@22       @100 NODE_STMT children:[@101 @102 ] STMT_DECL_VAR 
+Lno@22       @101 NODE_TYPE  int 
+Lno@22       @102 NODE_ITEM children:[@103 @104 ] ITEM_DECL
+Lno@22       @103 NODE_VAR  variable_name: i 
+Lno@22       @104 NODE_CONST  0 
+Lno@22       @105 NODE_EXPR children:[@106 @107 ] optype: < 
+Lno@22       @106 NODE_VAR  variable_name: i 
+Lno@22       @107 NODE_VAR  variable_name: len 
+Lno@22       @108 NODE_EXPR children:[@109 @111 ] optype: += 
+Lno@22       @109 NODE_EXPR children:[@110 ] optype: lval expr 
+Lno@22       @110 NODE_VAR  variable_name: i 
+Lno@22       @111 NODE_CONST  1 
+Lno@23       @112 NODE_STMT children:[@113 ] STMT: block {} 
+Lno@23       @113 NODE_STMT children:[@114 @119 @122 @126 ] STMT: for 
+Lno@23       @114 NODE_STMT children:[@115 @116 ] STMT_DECL_VAR 
+Lno@23       @115 NODE_TYPE  int 
+Lno@23       @116 NODE_ITEM children:[@117 @118 ] ITEM_DECL
+Lno@23       @117 NODE_VAR  variable_name: j 
+Lno@23       @118 NODE_CONST  0 
+Lno@23       @119 NODE_EXPR children:[@120 @121 ] optype: < 
+Lno@23       @120 NODE_VAR  variable_name: j 
+Lno@23       @121 NODE_VAR  variable_name: len 
+Lno@23       @122 NODE_EXPR children:[@123 @125 ] optype: += 
+Lno@23       @123 NODE_EXPR children:[@124 ] optype: lval expr 
+Lno@23       @124 NODE_VAR  variable_name: j 
+Lno@23       @125 NODE_CONST  1 
+Lno@24       @126 NODE_STMT children:[@127 ] STMT: block {} 
+Lno@24       @127 NODE_FUNC children:[@128 @129 ]  func_name: printf
+Lno@24       @128 NODE_CONST  "<%d>[%d][%d]\n" 
+Lno@24       @129 NODE_LIST children:[@130 @134 @136 ] 
+Lno@24       @130 NODE_ITEM children:[@131 ] ITEM_SPF
+Lno@24       @131 NODE_EXPR children:[@132 @133 ] optype: . 
+Lno@24       @132 NODE_VAR  variable_name: m3 
+Lno@24       @133 NODE_VAR  variable_name: id 
+Lno@24       @134 NODE_ITEM children:[@135 ] ITEM_SPF
+Lno@24       @135 NODE_VAR  variable_name: i 
+Lno@24       @136 NODE_ITEM children:[@137 ] ITEM_SPF
+Lno@24       @137 NODE_VAR  variable_name: j 

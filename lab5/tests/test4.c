@@ -12,7 +12,7 @@ struct Matrix{
 } m1,m2,m3;
 const int len = 10;
 void main(){
-	//m1.id = 1, m2.id = 2, m3.id=3;
+	m1.id = 1; m2.id = 2; m3.id = 3;
 	for(int i=0;i<len;i+=1){
 		for(int j=0;j<len;j+=1){
 			;
@@ -21,7 +21,7 @@ void main(){
 
 	for(int i=0;i<len;i+=1){
 		for(int j=0;j<len;j+=1){
-			;
+			printf("<%d>[%d][%d]\n",m3.id,i,j);
 		}
 	}
 }

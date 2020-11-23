@@ -44,6 +44,7 @@ enum AuthorityType{
 };
 
 enum OperatorType{
+    OP_POINT, // .
     OP_EQ,  // =
     OP_PLUS, // +
     OP_MINUS, // -
@@ -65,6 +66,7 @@ enum OperatorType{
     OP_MODEQ, // %=
     OP_MULEQ, // *=
     OP_DIVEQ, // /=
+    OP_COMMA, // ,
 };
 
 enum ItemType{

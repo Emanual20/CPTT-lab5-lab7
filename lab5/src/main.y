@@ -10,6 +10,7 @@
 
 %token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST KEY_STRUCT KEY_PUBLIC KEY_PRIVATE
 
+%token LOP_POINT
 %token LOP_MINUS LOP_PLUS LOP_NOT
 %token LOP_MUL LOP_DIV LOP_MOD
 %token LOP_LESS LOP_GREA LOP_LE LOP_GE
@@ -23,7 +24,7 @@
 
 %token IDENTIFIER HEX_INTEGER DEC_INTEGER OCT_INTEGER CHAR BOOL STRING
 
-
+%left LOP_POINT
 %right LOP_UMINUS LOP_UPLUS LOP_NOT
 %left LOP_MUL LOP_DIV LOP_MOD
 %left LOP_LESS LOP_GREA LOP_LE LOP_GE
@@ -124,7 +125,7 @@ declareitem
 ;
 
 assignstmt
-: LValExp LOP_ASSIGN expr{
+: LValExp LOP_ASSIGN LorExp{
     TreeNode* node = new TreeNode(lineno, NODE_EXPR);
     node->stype = STMT_EXP;
     node->optype = OP_EQ;
@@ -132,7 +133,7 @@ assignstmt
     node->addChild($3);
     $$ = node;
 }
-| LValExp AssignEqOp expr{
+| LValExp AssignEqOp LorExp{
     TreeNode* node = new TreeNode(lineno, NODE_EXPR);
     node->stype = STMT_EXP;
     node->optype = $2->optype;
@@ -278,14 +279,14 @@ spflist
 ;
 
 forstmt
-: KEY_FOR LOP_LPAREN vardeclstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+: KEY_FOR LOP_LPAREN vardeclstmt SEMICOLON CommaExp SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
     node->addChild($3); node->addChild($5); node->addChild($7);
     node->addChild($9);
     $$ = node;
 }
-| KEY_FOR LOP_LPAREN assignstmt SEMICOLON expr SEMICOLON assignstmt LOP_RPAREN statement{
+| KEY_FOR LOP_LPAREN assignstmt SEMICOLON CommaExp SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
     node->addChild($3); node->addChild($5); node->addChild($7);
@@ -296,7 +297,7 @@ forstmt
 
 returnstmt
 : KEY_RETURN {$$ = new TreeNode(lineno, NODE_STMT); $$->stype = STMT_RETURN;}
-| KEY_RETURN LorExp {
+| KEY_RETURN CommaExp {
     TreeNode* node = new TreeNode($2->lineno, NODE_STMT);
     node->stype = STMT_RETURN;
     node->addChild($2);
@@ -305,7 +306,7 @@ returnstmt
 ;
 
 whilestmt
-: KEY_WHILE LOP_LPAREN LorExp LOP_RPAREN statement{
+: KEY_WHILE LOP_LPAREN CommaExp LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_WHILE;
     node->addChild($3);
@@ -315,14 +316,14 @@ whilestmt
 ;
 
 ifstmt
-: KEY_IF LOP_LPAREN LorExp LOP_RPAREN statement {
+: KEY_IF LOP_LPAREN CommaExp LOP_RPAREN statement {
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_IF;
     node->addChild($3);
     node->addChild($5);
     $$ = node;
 }
-| KEY_IF LOP_LPAREN LorExp LOP_RPAREN statement KEY_ELSE statement {
+| KEY_IF LOP_LPAREN CommaExp LOP_RPAREN statement KEY_ELSE statement {
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_IFELSE;
     node->addChild($3);
@@ -336,9 +337,16 @@ expr
 : LorExp{$$=$1;}
 ;
 
+// note: here PrimaryExp has different nodetype
 PrimaryExp
 : IDENTIFIER {
     $$ = $1;
+}
+| IDENTIFIER LOP_POINT IDENTIFIER{
+    $$ = new TreeNode($1->lineno,NODE_EXPR);
+    $$ -> stype = STMT_EXP;
+    $$ -> optype = OP_POINT;
+    $$ -> addChild($1); $$ -> addChild($3);
 }
 | INTEGER {
     $$ = $1;
@@ -353,12 +361,18 @@ PrimaryExp
 
 //left value expression for further process
 LValExp
-: IDENTIFIER{
+: IDENTIFIER {
     TreeNode* node = new TreeNode($1->lineno, NODE_EXPR);
     node->stype = STMT_EXP;
     node->optype = OP_LVAL;
     node->addChild($1);
     $$ = node;
+}
+| IDENTIFIER LOP_POINT IDENTIFIER {
+    $$ = new TreeNode($1->lineno,NODE_EXPR);
+    $$ -> stype = STMT_EXP;
+    $$ -> optype = OP_POINT;
+    $$ -> addChild($1); $$ -> addChild($3);
 }
 ;
 
@@ -480,6 +494,19 @@ LorExp
     $$ = node;  
 }
 ;
+
+CommaExp
+: LorExp{
+    $$ = $1;
+}
+| CommaExp LOP_COMMA LorExp{
+    TreeNode *node = new TreeNode($1->lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_COMMA;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node; 
+}
 
 INTEGER: HEX_INTEGER {$$=$1;}
 | DEC_INTEGER {$$=$1;}
