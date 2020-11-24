@@ -6,6 +6,10 @@ extern FILE *yyin;
 extern int yyparse();
 
 using namespace std;
+
+TreeNode* TreeNode::ptr_nst = new TreeNode(-1,NODE_ASSIST);
+stack<TreeNode*> TreeNode::ptr_vec = stack<TreeNode*>();
+
 int main(int argc, char *argv[])
 {
     if (argc == 2)
@@ -23,8 +27,8 @@ int main(int argc, char *argv[])
     yyparse();
     if(root != NULL) {
         root->genNodeId(0);
-        root->printAST();
         root->genSymbolTable();
+        root->printAST();
     }
     return 0;
 }

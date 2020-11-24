@@ -19,6 +19,7 @@ enum NodeType
 
     NODE_STMT,
     NODE_PROG,
+    NODE_ASSIST, // assist to occupy a position
 };
 
 enum StmtType {
@@ -103,7 +104,6 @@ public:
     void printSpecialInfo();
 
     int genNodeId(int);
-    void genSymbolTable();
 
 public:
     AuthorityType authtype;
@@ -115,6 +115,7 @@ public:
     int int_val;
     char ch_val;
     bool b_val;
+    bool is_dec=false; // to record if a NODE_VAR appears in a declstmt 
     string str_val;
     string var_name;
 public:
@@ -129,10 +130,14 @@ public:
     static string iType2String (ItemType type);
 
 public:
+    static TreeNode* ptr_nst;
+    static stack<TreeNode*> ptr_vec; 
     TreeNode(int lineno, NodeType type);
     void OpenSymbolTable();
     void CloseSymbolTable();
-    bool IsSymbolTableOn(); 
+    bool IsSymbolTableOn();
+    void genSymbolTable();
+    void printSymbolTable();
 };
 
 #endif

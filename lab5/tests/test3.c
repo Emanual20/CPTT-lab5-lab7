@@ -1,30 +1,25 @@
 /*
 	I'm level 1 test. without pointer.
 */
-// struct Matrix{
-// 	int id;
-// 	int arr;
-// } m1,m2,m3;
-const int len = 10;
-int t = 0x21;
-int t = 077;
-int len = t - 0x15 + 077;
+int a = 0;
+int f(int x,int y){
+	a += x*x + y*y;
+	return s;
+}
+// hello
 void main(){
-	//m1.id = 1, m2.id = 2, m3.id=3;
-	for(int i=0;i<len;i+=1){
-		for(int j=0;j<len;j+=1){
-			//m1.arr[i][j]=i;
-			//m2.arr[i][j]=j;
-			//m3.arr[i][j]=m1.arr[i][j]+m2.arr[i][j];
-			;
+	int i=0;
+	int a=1,b=1;
+	int line;
+	scanf("%d",line);
+	if(line>10000) {line=10000;}
+	while(1){
+		if(a+b+1<line){
+			printf("sum is: %d\n",s);
 		}
-	}
-
-	for(int i=0;i<len;i+=1){
-		for(int j=0;j<len;j+=1){
-			//printf("<%d>[%d][%d] %d\n",m3.id,i,j,m3.arr[i][j]);
-			;
+		else{
+			printf("result is: %d\n",s);
+			break;
 		}
-		//printf("\n");
 	}
 }

@@ -65,23 +65,24 @@ decl
 ;
 
 constdeclstmt
-: KEY_CONST T constdef{
+: KEY_CONST T constdefitem{
     TreeNode* node = new TreeNode($2->lineno, NODE_STMT);
     node->stype = STMT_CONSTDECL;
     node->addChild($2);
     node->addChild($3);
     $$ = node;  
 }
-| constdeclstmt LOP_COMMA constdef{
+| constdeclstmt LOP_COMMA constdefitem{
     $1->addChild($3);
     $$ = $1;
 }
 ;
 
-constdef
+constdefitem
 : IDENTIFIER LOP_ASSIGN constinitval{
     TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
     node->itype = ITEM_DECL;
+    $1->is_dec = true; 
     node->addChild($1);
     node->addChild($3);
     $$ = node;
@@ -113,6 +114,7 @@ declareitem
 : IDENTIFIER LOP_ASSIGN expr{
     TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
     node->itype = ITEM_DECL;
+    $1->is_dec=true;
     node->addChild($1);
     node->addChild($3);
     $$ = node;
@@ -120,6 +122,7 @@ declareitem
 | IDENTIFIER{
     TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
     node->itype = ITEM_DECL;
+    $1->is_dec=true;
     node->addChild($1);
     $$ = node;
 }
@@ -150,6 +153,7 @@ funcdef
     node -> type = new Type(COMPOSE_FUNCTION); 
     node -> type -> retType = $1 -> type -> type; // retType
     node -> var_name = $2 -> var_name; // funcname
+    $2 -> is_dec = true;
     node -> addChild($2); // this line can be ignored further
     node -> addChild($4); // params
     node -> addChild($6);
@@ -160,6 +164,7 @@ funcdef
     node -> type = new Type(COMPOSE_FUNCTION); 
     node -> type -> retType = TYPE_VOID -> type; // retType
     node -> var_name = $2 -> var_name; // funcname
+    $2 -> is_dec = true;
     node -> addChild($2); // this line can be ignored further
     node -> addChild($4); // params
     node -> addChild($6);
@@ -279,19 +284,43 @@ spflist
 }
 ;
 
+// note: you shall add block node before vardeclstmt, since scope of vars in vardeclstmt shall in the block.
 forstmt
 : KEY_FOR LOP_LPAREN vardeclstmt SEMICOLON CommaExp SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
+
+    // check if $9 is a block, if not, create a block and put $9 into this block.
+    if($9->nodeType==NODE_STMT&&$9->stype==STMT_BLOCK){
+        node->addChild($9);
+    }
+    else{
+        TreeNode* blocknode = new TreeNode($3->lineno, NODE_STMT);
+        blocknode -> stype = STMT_BLOCK;
+        blocknode -> addChild($9);
+        node -> addChild(blocknode);
+    }
+
     node->addChild($3); node->addChild($5); node->addChild($7);
-    node->addChild($9);
+
     $$ = node;
 }
 | KEY_FOR LOP_LPAREN assignstmt SEMICOLON CommaExp SEMICOLON assignstmt LOP_RPAREN statement{
     TreeNode* node = new TreeNode($3->lineno, NODE_STMT);
     node->stype = STMT_FOR;
+
+    // check if $9 is a block, if not, create a block and put $9 into this block.
+    if($9->nodeType==NODE_STMT&&$9->stype==STMT_BLOCK){
+        node->addChild($9);
+    }
+    else{
+        TreeNode* blocknode = new TreeNode($3->lineno, NODE_STMT);
+        blocknode -> stype = STMT_BLOCK;
+        blocknode -> addChild($9);
+        node -> addChild(blocknode);
+    }
+
     node->addChild($3); node->addChild($5); node->addChild($7);
-    node->addChild($9);
     $$ = node;
 }
 ;
@@ -590,6 +619,7 @@ structinitlist
 structinititem
 : IDENTIFIER{
     $$ = new TreeNode($1->lineno,NODE_ITEM);
+    $1->is_dec = true;
     $$-> addChild($1);
 }
 | {$$=new TreeNode(lineno,NODE_ITEM);}

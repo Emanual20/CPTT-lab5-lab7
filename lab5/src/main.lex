@@ -20,14 +20,6 @@ CHAR \'.?\'
 STRING \".+\"
 %%
 
-{BLOCKCOMMENT} {
-    int len=strlen(yytext);
-    for(int i=0;i<len;i++){
-        if(yytext[i]=='\n'||yytext[i]=='\r') lineno++;
-    }
-}
-{LINECOMMENT}  /*do nothing*/
-
 "int" return T_INT;
 "bool" return T_BOOL;
 "char" return T_CHAR;
@@ -166,6 +158,14 @@ STRING \".+\"
     yylval = node;
     return STRING;
 }
+
+{BLOCKCOMMENT} {
+    int len=strlen(yytext);
+    for(int i=0;i<len;i++){
+        if(yytext[i]=='\n'||yytext[i]=='\r') lineno++;
+    }
+}
+{LINECOMMENT}  /*do nothing*/
 
 {WHILTESPACE} /* do nothing */
 

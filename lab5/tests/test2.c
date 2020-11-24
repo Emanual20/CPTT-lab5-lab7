@@ -1,26 +1,30 @@
 /*
-	I'm level 1 test.
+	I'm level 2 test. without pointer.
 */
-int a=1;
+struct Matrix{
+	int id;
+	int arr;
+	struct sparse_matrix{
+		int zero_num;
+		int a,b;
+		string name;
+	};
+} m1,m2,m3;
+const int len = 10;
+int t = 0x21;
+int t = 077;
+int len = t - 0x15 + 077;
 void main(){
-	int a,s;
-	a=10;
-	s=0;
-	char ch;
-	scanf("%d",ch);
-	while(a>0&&a<=10||a%100==10&&!a==10){
-		a-=1;
-		int a;
-		a=10;
-		s+=1;
-		if(-s<-10){
-			printf("%dresult is: %d\n",a,s);
-			int b;
-			b=10;
-			for(int i=0;i<b;i+=1){
-				printf("Have fun: %d\n",i);
-			}
+	m1.id = 1; m2.id = 2; m3.id = 3;
+	for(int i=0;i<len;i+=1){
+		for(int j=0;j<len;j+=1){
+			;
+		}
+	}
+
+	for(int i=0;i<len;i+=1){
+		for(int j=0;j<len;j+=1){
+			printf("<%d>[%d][%d]\n",m3.id,i,j);
 		}
 	}
 }
-// No more compilation error.

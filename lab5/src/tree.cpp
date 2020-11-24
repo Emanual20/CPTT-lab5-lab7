@@ -42,6 +42,11 @@ void TreeNode::printNodeInfo() {
     cout<<this->nodeType2String(this->nodeType)<<" ";
 
     this->printSpecialInfo();
+
+    if(this->IsSymbolTableOn()==true){
+        this->printSymbolTable();
+    }
+
     cout<<endl;
 }
 
@@ -58,12 +63,54 @@ void TreeNode::printAST() {
 }
 
 void TreeNode::genSymbolTable(){
-    if(this->nodeID!=0){
-        cerr<<"non-root node can't not call gensymboltable() func!"<<endl;
-        return;
+    // if(this->nodeID!=0){
+    //     cerr<<"non-root node can't not call genSymbolTable() func!"<<endl;
+    //     return;
+    // }
+
+    // use root's symboltable to init the scope 
+    if(this->nodeID==0){
+        TreeNode::ptr_nst = this;
+        TreeNode::ptr_vec.push(this);
+        this->OpenSymbolTable();
+    }
+    bool isSwitch = false;
+
+    // switch the scope and open this node's symboltable
+    if(this->nodeType==NODE_STMT&&(this->stype==STMT_STRUCTDECL||this->stype==STMT_BLOCK)){
+        TreeNode::ptr_nst = this;
+        TreeNode::ptr_vec.push(this);
+        isSwitch=true;
+        this->OpenSymbolTable();
     }
 
+    if(this->nodeType==NODE_VAR&&this->is_dec){
+        varItem items;
+        items.fDecNode = this;
+        //items.type has not been recorded;
+        TreeNode::ptr_nst->SymTable[this->var_name]=items;
+    }
+
+    if(this->child!=nullptr) this->child->genSymbolTable();
+    if(this->sibling!=nullptr) this->sibling->genSymbolTable();
     // to traversal the parse tree further..
+
+    // check isSwitch to recover the scope if nec
+    if(isSwitch){
+        TreeNode::ptr_nst = TreeNode::ptr_vec.top();
+        TreeNode::ptr_vec.pop();
+    }
+}
+
+void TreeNode::printSymbolTable(){
+    if(!this->IsSymbolTableOn()){
+        cerr<<"this node shall not call printSymbolTable() func"<<endl;
+    }
+    cout<<" vars:[";
+    for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
+        cout<<it->first<<" ";
+    }
+    cout<<"] ";
 }
 
 void TreeNode::OpenSymbolTable(){
