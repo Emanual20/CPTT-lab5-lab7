@@ -29,6 +29,9 @@ int main(int argc, char *argv[])
         root->genNodeId(0);
         root->genSymbolTable();
         root->printAST();
+        if(!root->Type_Check(root)){
+            cout<<"type error"<<endl;
+        }
     }
     return 0;
 }

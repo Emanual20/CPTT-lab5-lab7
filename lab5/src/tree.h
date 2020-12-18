@@ -84,7 +84,7 @@ public:
     // the node may have lineno, var_name, nodeID
         Type* type;
     // the type pointer of this var don't record in fDecNode
-        int cnt = 0;
+        int dec_cnt = 0;
     };
 
     int nodeID;
@@ -131,7 +131,7 @@ public:
     static string sType2String (StmtType type);
     static string iType2String (ItemType type);
 public:
-    bool Type_Check();
+    bool Type_Check(TreeNode*);
     bool Is_Defined(string,TreeNode*);  // the TreeNode* param shall be ptr to root 
     bool Is_Dupdefined(string,TreeNode*); // the TreeNode* param shall be ptr to root
     bool Is_TypeAccordance(TreeNode*);

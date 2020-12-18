@@ -7,6 +7,7 @@ void TreeNode::addChild(TreeNode* child) {
     for(;it->sibling!=nullptr;it=it->sibling){;}
     it->sibling=child;
     it->sibling->left_sibling = it;
+    it->sibling->fath = this;
 }
 
 void TreeNode::addSibling(TreeNode* sibling){
@@ -87,17 +88,19 @@ void TreeNode::genSymbolTable(){
     }
 
     if(this->nodeType==NODE_VAR&&this->is_dec){
-        bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != Tree::ptr_nst->SymTable.end();
+        bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != TreeNode::ptr_nst->SymTable.end();
         varItem items;
+        // cout<<this->var_name<<" "<<is_exist<<" ";
         if(!is_exist){
             items.fDecNode = this;
-            items.cnt = 1;
+            items.dec_cnt = 1;
         }
         else{
-            items = SymTable[this->var_name];
-            items.cnt++;
+            items = TreeNode::ptr_nst->SymTable[this->var_name];
+            items.dec_cnt++;
         }
         //items.type has not been recorded;
+        // cout<<items.dec_cnt<<endl;
         TreeNode::ptr_nst->SymTable[this->var_name]=items;
     }
 
@@ -206,8 +209,33 @@ void TreeNode::printSpecialInfo() {
     }
 }
 
-bool TreeNode::Type_check(){
+bool TreeNode::Type_Check(TreeNode* root_ptr){
+    if(this->nodeType==NODE_VAR){
+        if(this->is_dec){
+            if(this->Is_Dupdefined(this->var_name,root_ptr)){
+                cerr<<"the variable "<<this->var_name
+                    <<" in line:"<<this->lineno
+                    <<" is dup_defined.."<<endl;
+                return false;
+            }
+        }
+        else{
+            if(!this->Is_Defined(this->var_name,root_ptr)){
+                cerr<<"the variable "<<this->var_name
+                    <<" in line:"<<this->lineno
+                    <<" is undefined.."<<endl;
+                return false;
+            }
 
+        }
+    }
+    // typeaccordance
+
+    // recursive type check
+    bool ret = true;
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check(root_ptr);
+    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check(root_ptr);
+    return ret;
 }
 
 bool TreeNode::Is_Defined(string var_name, TreeNode* root_ptr){
@@ -216,16 +244,28 @@ bool TreeNode::Is_Defined(string var_name, TreeNode* root_ptr){
         if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(var_name)){
             return true;
         }
-        if(now_ptr==root_ptr) return false;
+        if(now_ptr==root_ptr) break;
         now_ptr = now_ptr -> fath;
     }
     return false;
 }
 
-bool Is_Dupdefined(string var_name,TreeNode* ptr){
-
+bool TreeNode::Is_Dupdefined(string var_name,TreeNode* root_ptr){
+    TreeNode* now_ptr = this;
+    while(now_ptr){
+        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(var_name)){
+            // cout<<var_name<<" "<<now_ptr->SymTable[var_name].dec_cnt<<endl;
+            if(now_ptr->SymTable[var_name].dec_cnt>1){
+                return true;
+            }
+        }
+        if(now_ptr==root_ptr) break;
+        now_ptr = now_ptr -> fath;
+    }
+    return false;
 }
-bool Is_TypeAccordance(TreeNode* ptr){
+
+bool TreeNode::Is_TypeAccordance(TreeNode* ptr){
 
 }
 
