@@ -22,7 +22,7 @@ public:
     Type(ValueType valueType);
 public:  
     Type* paramType;
-    ValueType  retType; // for function
+    ValueType retType; // for function
     
     void addChild(Type* t); // has been finish in type.cpp
     void addParam(Type* t);

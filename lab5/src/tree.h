@@ -84,15 +84,17 @@ public:
     // the node may have lineno, var_name, nodeID
         Type* type;
     // the type pointer of this var don't record in fDecNode
+        int cnt = 0;
     };
-
 
     int nodeID;
     int lineno;
     NodeType nodeType;
 
     TreeNode* child = nullptr;
-    TreeNode* sibling = nullptr;
+    TreeNode* fath = nullptr;
+    TreeNode* sibling = nullptr;      // pointer point to right sibling
+    TreeNode* left_sibling = nullptr; // pointer point to left sibling
 
     void addChild(TreeNode*);
     void addSibling(TreeNode*);
@@ -128,7 +130,11 @@ public:
     static string opType2String (OperatorType type);
     static string sType2String (StmtType type);
     static string iType2String (ItemType type);
-
+public:
+    bool Type_Check();
+    bool Is_Defined(string,TreeNode*);  // the TreeNode* param shall be ptr to root 
+    bool Is_Dupdefined(string,TreeNode*); // the TreeNode* param shall be ptr to root
+    bool Is_TypeAccordance(TreeNode*);
 public:
     static TreeNode* ptr_nst;
     static stack<TreeNode*> ptr_vec; 
@@ -136,6 +142,7 @@ public:
     void OpenSymbolTable();
     void CloseSymbolTable();
     bool IsSymbolTableOn();
+    bool Is_InSymbolTable(string);
     void genSymbolTable();
     void printSymbolTable();
 };

@@ -1,20 +1,22 @@
 #include "tree.h"
 void TreeNode::addChild(TreeNode* child) {
-    if(this->child==nullptr) {this->child=child; return;}
+    if(this->child==nullptr) {this->child=child; this->child->fath = this; return;}
     
     //find right position to insert a child
     TreeNode * it=this->child;
     for(;it->sibling!=nullptr;it=it->sibling){;}
     it->sibling=child;
+    it->sibling->left_sibling = it;
 }
 
 void TreeNode::addSibling(TreeNode* sibling){
-    if(this->sibling==nullptr) {this->sibling=sibling; return;}
+    if(this->sibling==nullptr) {this->sibling=sibling; this->sibling->left_sibling = this; return;}
 
     //find right position to insert a sibling
     TreeNode * it=this->sibling;
     for(;it->sibling!=nullptr;it=it->sibling){;}
     it->sibling=sibling;
+    it->sibling->left_sibling = it;
 }
 
 TreeNode::TreeNode(int lineno, NodeType type) {
@@ -85,8 +87,16 @@ void TreeNode::genSymbolTable(){
     }
 
     if(this->nodeType==NODE_VAR&&this->is_dec){
+        bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != Tree::ptr_nst->SymTable.end();
         varItem items;
-        items.fDecNode = this;
+        if(!is_exist){
+            items.fDecNode = this;
+            items.cnt = 1;
+        }
+        else{
+            items = SymTable[this->var_name];
+            items.cnt++;
+        }
         //items.type has not been recorded;
         TreeNode::ptr_nst->SymTable[this->var_name]=items;
     }
@@ -126,6 +136,13 @@ bool TreeNode::IsSymbolTableOn(){
     return this->is_SymbolTable_on;
 }
 
+bool TreeNode::Is_InSymbolTable(string var_name){
+    if(!this->IsSymbolTableOn()){
+        cout<<"this nodeID "<<this->nodeID<<" shall not call Is_InSymbolTable() func"<<endl;
+        return false;
+    }
+    return this->SymTable.find(var_name) != this->SymTable.end();
+}
 
 void TreeNode::printSpecialInfo() {
     switch(this->nodeType){
@@ -189,6 +206,28 @@ void TreeNode::printSpecialInfo() {
     }
 }
 
+bool TreeNode::Type_check(){
+
+}
+
+bool TreeNode::Is_Defined(string var_name, TreeNode* root_ptr){
+    TreeNode* now_ptr = this;
+    while(now_ptr){
+        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(var_name)){
+            return true;
+        }
+        if(now_ptr==root_ptr) return false;
+        now_ptr = now_ptr -> fath;
+    }
+    return false;
+}
+
+bool Is_Dupdefined(string var_name,TreeNode* ptr){
+
+}
+bool Is_TypeAccordance(TreeNode* ptr){
+
+}
 
 string TreeNode::sType2String(StmtType type) {
     switch(type){
