@@ -377,6 +377,7 @@ PrimaryExp
     $$ -> stype = STMT_EXP;
     $$ -> optype = OP_POINT;
     $$ -> addChild($1); $$ -> addChild($3);
+    // TODO: miss struct's type expr
 }
 | INTEGER {
     $$ = $1;
@@ -416,6 +417,14 @@ UnaryExp
     node->optype = OP_PLUS;
     node->addChild($2);
     $$ = node;
+
+    if($2->type->is_can_expandtoint()){
+        $$->type = TYPE_INT;
+    }
+    else if($2->type==TYPE_ERROR){
+        $$->type = TYPE_ERROR;
+    }
+    else $$->type = TYPE_ERROR;
 }
 | LOP_MINUS UnaryExp %prec LOP_UMINUS{
     TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
@@ -423,6 +432,14 @@ UnaryExp
     node->optype = OP_MINUS;
     node->addChild($2);
     $$ = node;
+
+    if($2->type->is_can_expandtoint()){
+        $$->type = TYPE_INT;
+    }
+    else if($2->type==TYPE_ERROR){
+        $$->type = TYPE_ERROR;
+    }
+    else $$->type = TYPE_ERROR;
 } 
 | LOP_NOT UnaryExp{
     TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
@@ -430,6 +447,14 @@ UnaryExp
     node->optype = OP_NOT;
     node->addChild($2);
     $$ = node;
+
+    if($2->type->is_can_shrinktobool()){
+        $$->type = TYPE_BOOL;
+    }
+    else if($2->type==TYPE_ERROR){
+        $$->type = TYPE_ERROR;
+    }
+    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -444,6 +469,13 @@ MulExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
+
+    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
+        $$->type = TYPE_INT;
+    }
+    else{
+        $$->type = TYPE_ERROR;
+    }
 }
 ;
 
@@ -458,6 +490,14 @@ AddExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
+
+    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
+        $$->type = TYPE_INT;
+    }
+    else if($1->type->is_string_compatiable($3->type)){
+        $$->type = TYPE_STRING;
+    }
+    else $$->type = TYPE_ERROR;
 }
 | AddExp LOP_MINUS MulExp{
     TreeNode *node = new TreeNode($1->lineno, NODE_EXPR);
@@ -466,6 +506,11 @@ AddExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
+
+    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
+        $$->type = TYPE_INT;
+    }
+    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -479,7 +524,12 @@ RelExp
     node->optype = $2->optype;
     node->addChild($1);
     node->addChild($3);
-    $$ = node;    
+    $$ = node;
+
+    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+        $$->type = TYPE_BOOL;
+    }
+    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -493,7 +543,12 @@ EqExp
     node->optype = $2->optype;
     node->addChild($1);
     node->addChild($3);
-    $$ = node;  
+    $$ = node;
+
+    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+        $$->type = TYPE_BOOL;
+    }
+    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -507,7 +562,12 @@ LandExp
     node->optype = OP_LAND;
     node->addChild($1);
     node->addChild($3);
-    $$ = node;  
+    $$ = node;
+
+    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+        $$->type = TYPE_BOOL;
+    }
+    else $$->type = TYPE_ERROR; 
 }
 ;
 
@@ -521,7 +581,12 @@ LorExp
     node->optype = OP_LOR;
     node->addChild($1);
     node->addChild($3);
-    $$ = node;  
+    $$ = node;
+
+    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+        $$->type = TYPE_BOOL;
+    }
+    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -535,7 +600,12 @@ CommaExp
     node->optype = OP_COMMA;
     node->addChild($1);
     node->addChild($3);
-    $$ = node; 
+    $$ = node;
+
+    // if($1->type == $3->type){
+    //     $$->type = $1->type;
+    // }
+    // else $$->type = TYPE_ERROR;
 }
 
 INTEGER: HEX_INTEGER {$$=$1;}

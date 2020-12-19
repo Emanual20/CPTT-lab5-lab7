@@ -210,6 +210,9 @@ void TreeNode::printSpecialInfo() {
 }
 
 bool TreeNode::Type_Check(TreeNode* root_ptr){
+    bool ret = true;
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check(root_ptr);
+
     if(this->nodeType==NODE_VAR){
         if(this->is_dec){
             if(this->Is_Dupdefined(this->var_name,root_ptr)){
@@ -226,14 +229,13 @@ bool TreeNode::Type_Check(TreeNode* root_ptr){
                     <<" is undefined.."<<endl;
                 return false;
             }
-
         }
     }
     // typeaccordance
 
+    
+    
     // recursive type check
-    bool ret = true;
-    if(this->child!=nullptr) ret = ret && this->child->Type_Check(root_ptr);
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check(root_ptr);
     return ret;
 }
