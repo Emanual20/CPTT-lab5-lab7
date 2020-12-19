@@ -34,7 +34,11 @@ int main(int argc, char *argv[])
             return 0;
         }
         root->Type_Check_SecondTrip(root);
-        root->Type_Check_ThirdTrip(root);
+        if(!root->Type_Check_ThirdTrip(root)){
+            cout<<"expr accordinate error"<<endl;
+            return 0;
+        }
+        root->Type_Check_FourthTrip(root);
     }
     return 0;
 }

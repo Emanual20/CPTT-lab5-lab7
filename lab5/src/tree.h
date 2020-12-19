@@ -134,13 +134,13 @@ public:
     static string sType2String (StmtType type);
     static string iType2String (ItemType type);
 public:
-    bool Type_Check(TreeNode*); // to call is_defined & is_dupdefined to type check
+    bool Type_Check(TreeNode*); // to check is_defined & is_dupdefined
     bool Type_Check_SecondTrip(TreeNode*); // to generate all types from symboltable
-    bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type & stmt type
+    bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type
+    bool Type_Check_FourthTrip(TreeNode*); // to analyze all other statements and other tokens
     bool Is_Defined(string,TreeNode*);  // the TreeNode* param shall be ptr to root 
     bool Is_Dupdefined(string,TreeNode*); // the TreeNode* param shall be ptr to root
     void fill_ident_type();
-    bool Is_TypeAccordance(TreeNode*);
 public:
     static TreeNode* ptr_nst;
     static stack<TreeNode*> ptr_vec; 

@@ -34,11 +34,14 @@ public:
 public:
     string getTypeInfo();
 public:
-    bool operator ==(const Type* t){
-        if(this->type==VALUE_BOOL||this->type==VALUE_INT
-            ||this->type==VALUE_CHAR||this->type==VALUE_STRING
+    bool operator ==(const Type t){
+        cout<<"i am here"<<endl;
+        if(this->type==VALUE_BOOL
+            ||this->type==VALUE_INT
+            ||this->type==VALUE_CHAR
+            ||this->type==VALUE_STRING
             ||this->type==VALUE_VOID){
-            return this->type == t->type;
+            return this->type == t.type;
         }
         else{
             cout<<"we haven't finish compose struct comparision.."<<endl;

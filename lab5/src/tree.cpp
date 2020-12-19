@@ -294,6 +294,12 @@ bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
         }
     }
 
+    if(this->nodeType == NODE_EXPR && this->stype == STMT_EXP){
+        if(this->optype == OP_LVAL){
+            this->type = this->child->type;
+        }
+    }
+
     if(this->sibling!=nullptr) this->sibling->Type_Check_SecondTrip(ptr);
     return true;
 }
@@ -381,8 +387,135 @@ bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
                         }
                         else{
                             this->type = TYPE_ERROR;
-                            cerr<<"type error.."<<endl;
                         }
+                        break;
+                    }
+                    case OP_LESS:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_GREA:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_LE:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_GE:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_EEQ:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_NEQ:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_LAND:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_LOR:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_COMMA:{
+                        // TODO: OP_COMMA has bugs unfinished, in C++ grammar, if all the sub-comma expr are false,
+                        // it will be false;
+                        if(this->findChild(1)->type == TYPE_ERROR || this->findChild(2)->type == TYPE_ERROR){
+                            this->type = TYPE_ERROR;
+                        }
+                        else this->type = TYPE_BOOL;
+                        break;
+                    }
+                    case OP_EQ:{
+                        // cout<<this->findChild(1)->type->getTypeInfo()<<" "<<this->findChild(2)->type->getTypeInfo()
+                        //     <<(*(this->findChild(1)->type) == *(this->findChild(2)->type)) << endl;
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_PLUSEQ:{
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) 
+                             ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_MINUSEQ:{
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_MODEQ:{
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_MULEQ:{
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_DIVEQ:{
+                        if((*(this->findChild(1)->type) == *(this->findChild(2)->type))
+                            || (this->findChild(1)->type == TYPE_INT && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_CHAR && this->findChild(2)->type->is_can_expandtoint())
+                            || (this->findChild(1)->type == TYPE_BOOL && this->findChild(2)->type->is_can_expandtoint()) ){
+                            this->type = TYPE_VOID;
+                        }
+                        else this->type = TYPE_ERROR;
                         break;
                     }
                     default:{
@@ -400,7 +533,42 @@ bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
         }
     }
 
+    if(this->type==TYPE_ERROR){
+        cerr<<"expression type accordinate error in lineno "<<this->lineno<<endl;
+    }
+
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_ThirdTrip(ptr);
+    return ret;
+}
+
+bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
+    bool ret = true;
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check_FourthTrip(ptr);
+
+    // if(this->nodeType==NODE_EXPR&&this->stype==STMT_EXP)
+    if(this->nodeType==NODE_STMT){
+        switch(node->stype){
+            case STMT_IF:{
+                if(this->findChild(1)->is_can_shrinktobool()){
+                    this->type = this->findChild(2)->type;
+                }
+                else this->type = TYPE_ERROR;
+                break;
+            }
+            // case STMT_IFELSE:{
+            //     if(this->findChild(1)->is_can_shrinktobool() && 
+            //         (this->findChild(2)->)){
+
+            //     }
+            //     break;
+            // }
+            default:{
+                cout<<"we didn't support this type of statement yet.."<<endl;
+            }
+        }
+    }
+
+    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FourthTrip(ptr);
     return ret;
 }
 
@@ -429,10 +597,6 @@ bool TreeNode::Is_Dupdefined(string var_name,TreeNode* root_ptr){
         now_ptr = now_ptr -> fath;
     }
     return false;
-}
-
-bool TreeNode::Is_TypeAccordance(TreeNode* ptr){
-
 }
 
 string TreeNode::sType2String(StmtType type) {
@@ -469,6 +633,7 @@ string TreeNode::nodeType2String (NodeType type){
 
         case NODE_STMT:  return "NODE_STMT";
         case NODE_PROG:  return "NODE_PROG";
+        case NODE_AUTH:  return "NODE_AUTH";
     }
     return "unknown type";
 }

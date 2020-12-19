@@ -412,6 +412,7 @@ LValExp
     $$ = node;
 }
 | IDENTIFIER LOP_POINT IDENTIFIER {
+    // miss structure's type determine
     $$ = new TreeNode($1->lineno,NODE_EXPR);
     $$ -> stype = STMT_EXP;
     $$ -> optype = OP_POINT;
@@ -493,11 +494,6 @@ RelExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-    //     $$->type = TYPE_BOOL;
-    // }
-    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -512,11 +508,6 @@ EqExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-    //     $$->type = TYPE_BOOL;
-    // }
-    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -531,11 +522,6 @@ LandExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-    //     $$->type = TYPE_BOOL;
-    // }
-    // else $$->type = TYPE_ERROR; 
 }
 ;
 
@@ -550,11 +536,6 @@ LorExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-    //     $$->type = TYPE_BOOL;
-    // }
-    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -569,11 +550,6 @@ CommaExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    // if($1->type == $3->type){
-    //     $$->type = $1->type;
-    // }
-    // else $$->type = TYPE_ERROR;
 }
 
 INTEGER: HEX_INTEGER {$$=$1;}
