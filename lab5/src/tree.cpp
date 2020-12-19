@@ -547,21 +547,70 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
 
     // if(this->nodeType==NODE_EXPR&&this->stype==STMT_EXP)
     if(this->nodeType==NODE_STMT){
-        switch(node->stype){
+        switch(this->stype){
             case STMT_IF:{
-                if(this->findChild(1)->is_can_shrinktobool()){
+                if(this->findChild(1)->type->is_can_shrinktobool()){
                     this->type = this->findChild(2)->type;
                 }
                 else this->type = TYPE_ERROR;
                 break;
             }
-            // case STMT_IFELSE:{
-            //     if(this->findChild(1)->is_can_shrinktobool() && 
-            //         (this->findChild(2)->)){
-
-            //     }
-            //     break;
-            // }
+            case STMT_IFELSE:{
+                if(this->findChild(1)->type->is_can_shrinktobool() && 
+                    (this->findChild(2)->type!=TYPE_ERROR && this->findChild(3)->type != TYPE_ERROR)){
+                    this->type = TYPE_VOID;
+                }
+                else this->type = TYPE_ERROR;
+                break;
+            }
+            case STMT_WHILE:{
+                if(this->findChild(1)->type->is_can_shrinktobool()){
+                    this->type = this->findChild(2)->type;
+                }
+                else this->type = TYPE_ERROR;
+                break;
+            }
+            case STMT_FOR:{
+                if(this->findChild(2)->type == TYPE_VOID &&
+                    this->findChild(3)->type->is_can_shrinktobool()&&
+                    this->findChild(4)->type == TYPE_VOID){
+                    this->type = this->findChild(1)->type;
+                }
+                else this->type = TYPE_ERROR;
+                break;
+            }
+            case STMT_SKIP:{
+                this->type = TYPE_VOID;
+                break;
+            }
+            case STMT_BREAK:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_CONTINUE:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_RETURN:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_BLOCK:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_VARDECL:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_CONSTDECL:{
+                // didn't finish yet
+                break;
+            }
+            case STMT_STRUCTDECL:{
+                // TODO: in v2.0 we have to finish this
+                break;
+            }
             default:{
                 cout<<"we didn't support this type of statement yet.."<<endl;
             }
