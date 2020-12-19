@@ -20,6 +20,22 @@ void TreeNode::addSibling(TreeNode* sibling){
     it->sibling->left_sibling = it;
 }
 
+TreeNode* TreeNode::findChild(int offset){
+    if(offset<=0){
+        cout<<"invalid offset param.."<<endl;
+        return nullptr;
+    }
+    TreeNode* tmp_ptr = this->child;
+    for(int i=1;i<offset;i++){
+        if(!(tmp_ptr->sibling)){
+            cout<<"invalid offset param "<<offset<<".."<<endl;
+            return nullptr;
+        }
+        tmp_ptr = tmp_ptr->sibling;
+    }
+    return tmp_ptr;
+}
+
 TreeNode::TreeNode(int lineno, NodeType type) {
     this->lineno=lineno;
     this->nodeType=type;
@@ -139,12 +155,24 @@ bool TreeNode::IsSymbolTableOn(){
     return this->is_SymbolTable_on;
 }
 
-bool TreeNode::Is_InSymbolTable(string var_name){
+bool TreeNode::Is_InSymbolTable(int uselino,string var_name){
     if(!this->IsSymbolTableOn()){
         cout<<"this nodeID "<<this->nodeID<<" shall not call Is_InSymbolTable() func"<<endl;
         return false;
     }
-    return this->SymTable.find(var_name) != this->SymTable.end();
+    /*
+        to avoid a condition that
+        int main(){
+            int a;
+            b=10;
+            int b;
+        }
+        the first decl lineno of b is smaller than the first use lineno
+    */
+    if(this->SymTable.find(var_name) != this->SymTable.end()){
+        return this->SymTable.find(var_name)->second.fDecNode->lineno <= uselino;
+    }
+    else return false;
 }
 
 void TreeNode::printSpecialInfo() {
@@ -221,6 +249,17 @@ bool TreeNode::Type_Check(TreeNode* root_ptr){
                     <<" is dup_defined.."<<endl;
                 return false;
             }
+
+            // add type record to first declare node
+            TreeNode* tmp_ptr = this;
+            while (tmp_ptr){
+                if((tmp_ptr->nodeType == NODE_STMT &&
+                (tmp_ptr->stype == STMT_CONSTDECL || tmp_ptr->stype == STMT_VARDECL))){
+                    this->type = tmp_ptr->type;
+                    break;
+                }
+                tmp_ptr = tmp_ptr -> fath;
+            }
         }
         else{
             if(!this->Is_Defined(this->var_name,root_ptr)){
@@ -229,21 +268,146 @@ bool TreeNode::Type_Check(TreeNode* root_ptr){
                     <<" is undefined.."<<endl;
                 return false;
             }
+
         }
     }
-    // typeaccordance
-
-    
-    
     // recursive type check
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check(root_ptr);
+    return ret;
+}
+
+bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
+    if(this->child!=nullptr) this->child->Type_Check_SecondTrip(ptr);
+
+    // to generate all types from symboltable
+    if(this->nodeType==NODE_VAR){
+        if(!this->is_dec){
+            TreeNode* now_ptr = this;
+            while(now_ptr){
+                if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(this->lineno,this->var_name)){
+                    this->type = now_ptr->SymTable[this->var_name].fDecNode->type;
+                    break;
+                }
+                if(now_ptr==ptr) break;
+                now_ptr = now_ptr -> fath;
+            }
+        }
+    }
+
+    if(this->sibling!=nullptr) this->sibling->Type_Check_SecondTrip(ptr);
+    return true;
+}
+
+bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
+    bool ret = true;
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check_ThirdTrip(ptr);
+
+    switch(this->nodeType){
+        case NODE_EXPR:{
+            if(this->stype==STMT_EXP){
+                switch(this->optype){
+                    case OP_FPLUS:{
+                        if(this->findChild(1)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else if(this->findChild(1)->type==TYPE_ERROR){
+                            this->type = TYPE_ERROR;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_FMINUS:{
+                        if(this->findChild(1)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else if(this->findChild(1)->type==TYPE_ERROR){
+                            this->type = TYPE_ERROR;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_NOT:{
+                        if(this->findChild(1)->type->is_can_shrinktobool()){
+                            this->type = TYPE_BOOL;
+                        }
+                        else if(this->findChild(1)->type==TYPE_ERROR){
+                            this->type = TYPE_ERROR;
+                        }
+                        else this->type = TYPE_ERROR;
+                        break;
+                    }
+                    case OP_MUL:{
+                        if(this->findChild(1)->type->is_can_expandtoint()&&this->findChild(2)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else{
+                            this->type = TYPE_ERROR;
+                        }
+                        break;
+                    }
+                    case OP_DIV:{
+                        if(this->findChild(1)->type->is_can_expandtoint()&&this->findChild(2)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else{
+                            this->type = TYPE_ERROR;
+                        }
+                        break;
+                    }
+                    case OP_MOD:{
+                        if(this->findChild(1)->type->is_can_expandtoint()&&this->findChild(2)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else{
+                            this->type = TYPE_ERROR;
+                        }
+                        break;
+                    }
+                    case OP_PLUS:{
+                        if(this->findChild(1)->type->is_can_expandtoint()&&this->findChild(2)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else if(this->findChild(1)->type->is_string_compatiable(this->findChild(2)->type)){
+                            this->type = TYPE_STRING;
+                        }
+                        else{
+                            this->type = TYPE_ERROR;
+                        }
+                        break;
+                    }
+                    case OP_MINUS:{
+                        if(this->findChild(1)->type->is_can_expandtoint()&&this->findChild(2)->type->is_can_expandtoint()){
+                            this->type = TYPE_INT;
+                        }
+                        else{
+                            this->type = TYPE_ERROR;
+                            cerr<<"type error.."<<endl;
+                        }
+                        break;
+                    }
+                    default:{
+                        cout<<"undefined optype of STMT_EXP of NODE_EXPR in Type_Check_SecondTrip.."<<endl;
+                    }
+                }
+            }
+            else{
+                cout<<"undefined StmtType of NODE_EXPR in Type_Check_ThirdTrip.."<<endl;
+            }
+            break;
+        }
+        default:{
+            cout<<"undefined nodeType in Type_Check_ThirdTrip.."<<endl;
+        }
+    }
+
+    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_ThirdTrip(ptr);
     return ret;
 }
 
 bool TreeNode::Is_Defined(string var_name, TreeNode* root_ptr){
     TreeNode* now_ptr = this;
     while(now_ptr){
-        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(var_name)){
+        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(this->lineno,var_name)){
             return true;
         }
         if(now_ptr==root_ptr) break;
@@ -255,7 +419,7 @@ bool TreeNode::Is_Defined(string var_name, TreeNode* root_ptr){
 bool TreeNode::Is_Dupdefined(string var_name,TreeNode* root_ptr){
     TreeNode* now_ptr = this;
     while(now_ptr){
-        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(var_name)){
+        if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(this->lineno,var_name)){
             // cout<<var_name<<" "<<now_ptr->SymTable[var_name].dec_cnt<<endl;
             if(now_ptr->SymTable[var_name].dec_cnt>1){
                 return true;
@@ -324,6 +488,8 @@ string TreeNode::opType2String (OperatorType type){
         case OP_EQ:      return "= ";
         case OP_PLUS:    return "+ ";
         case OP_MINUS:   return "- ";
+        case OP_FPLUS:   return "+ ";
+        case OP_FMINUS:  return "- ";
         case OP_NOT:     return "! ";
         case OP_MUL:     return "* ";
         case OP_DIV:     return "/ ";

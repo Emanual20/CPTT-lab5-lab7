@@ -49,6 +49,8 @@ enum OperatorType{
     OP_EQ,  // =
     OP_PLUS, // +
     OP_MINUS, // -
+    OP_FPLUS, // +
+    OP_FMINUS, // -
     OP_NOT, // !
     OP_MUL, // *
     OP_DIV, // / 
@@ -98,6 +100,7 @@ public:
 
     void addChild(TreeNode*);
     void addSibling(TreeNode*);
+    TreeNode* findChild(int offset);
     
     void printNodeInfo();
     void printChildrenId();
@@ -131,9 +134,12 @@ public:
     static string sType2String (StmtType type);
     static string iType2String (ItemType type);
 public:
-    bool Type_Check(TreeNode*);
+    bool Type_Check(TreeNode*); // to call is_defined & is_dupdefined to type check
+    bool Type_Check_SecondTrip(TreeNode*); // to generate all types from symboltable
+    bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type & stmt type
     bool Is_Defined(string,TreeNode*);  // the TreeNode* param shall be ptr to root 
     bool Is_Dupdefined(string,TreeNode*); // the TreeNode* param shall be ptr to root
+    void fill_ident_type();
     bool Is_TypeAccordance(TreeNode*);
 public:
     static TreeNode* ptr_nst;
@@ -142,7 +148,7 @@ public:
     void OpenSymbolTable();
     void CloseSymbolTable();
     bool IsSymbolTableOn();
-    bool Is_InSymbolTable(string);
+    bool Is_InSymbolTable(int,string);
     void genSymbolTable();
     void printSymbolTable();
 };

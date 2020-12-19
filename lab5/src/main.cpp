@@ -31,7 +31,10 @@ int main(int argc, char *argv[])
         root->printAST();
         if(!root->Type_Check(root)){
             cout<<"type error"<<endl;
+            return 0;
         }
+        root->Type_Check_SecondTrip(root);
+        root->Type_Check_ThirdTrip(root);
     }
     return 0;
 }

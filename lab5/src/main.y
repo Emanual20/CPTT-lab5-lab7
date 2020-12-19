@@ -70,11 +70,17 @@ constdeclstmt
     node->stype = STMT_CONSTDECL;
     node->addChild($2);
     node->addChild($3);
-    $$ = node;  
+    $$ = node;
+
+    // add type to first declare node
+    $$->type = $3->type = $2->type;
 }
 | constdeclstmt LOP_COMMA constdefitem{
     $1->addChild($3);
     $$ = $1;
+
+    // add type to first declare node
+    $3->type = $$->type;
 }
 ;
 
@@ -102,11 +108,17 @@ vardeclstmt
     node->stype = STMT_VARDECL;
     node->addChild($1);
     node->addChild($2);
-    $$ = node;   
+    $$ = node;
+
+    // add type to first declare node
+    $$->type = $2->type = $1->type;
 } 
 | vardeclstmt LOP_COMMA declareitem {
     $1->addChild($3);
     $$ = $1;
+
+    // add type to first declare node
+    $3->type = $$->type;
 }
 ;
 
@@ -414,32 +426,16 @@ UnaryExp
 | LOP_PLUS UnaryExp %prec LOP_UPLUS{
     TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
     node->stype = STMT_EXP;
-    node->optype = OP_PLUS;
+    node->optype = OP_FPLUS;
     node->addChild($2);
     $$ = node;
-
-    if($2->type->is_can_expandtoint()){
-        $$->type = TYPE_INT;
-    }
-    else if($2->type==TYPE_ERROR){
-        $$->type = TYPE_ERROR;
-    }
-    else $$->type = TYPE_ERROR;
 }
 | LOP_MINUS UnaryExp %prec LOP_UMINUS{
     TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
     node->stype = STMT_EXP;
-    node->optype = OP_MINUS;
+    node->optype = OP_FMINUS;
     node->addChild($2);
     $$ = node;
-
-    if($2->type->is_can_expandtoint()){
-        $$->type = TYPE_INT;
-    }
-    else if($2->type==TYPE_ERROR){
-        $$->type = TYPE_ERROR;
-    }
-    else $$->type = TYPE_ERROR;
 } 
 | LOP_NOT UnaryExp{
     TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
@@ -447,14 +443,6 @@ UnaryExp
     node->optype = OP_NOT;
     node->addChild($2);
     $$ = node;
-
-    if($2->type->is_can_shrinktobool()){
-        $$->type = TYPE_BOOL;
-    }
-    else if($2->type==TYPE_ERROR){
-        $$->type = TYPE_ERROR;
-    }
-    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -469,13 +457,6 @@ MulExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
-        $$->type = TYPE_INT;
-    }
-    else{
-        $$->type = TYPE_ERROR;
-    }
 }
 ;
 
@@ -490,14 +471,6 @@ AddExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
-        $$->type = TYPE_INT;
-    }
-    else if($1->type->is_string_compatiable($3->type)){
-        $$->type = TYPE_STRING;
-    }
-    else $$->type = TYPE_ERROR;
 }
 | AddExp LOP_MINUS MulExp{
     TreeNode *node = new TreeNode($1->lineno, NODE_EXPR);
@@ -506,11 +479,6 @@ AddExp
     node->addChild($1);
     node->addChild($3);
     $$ = node;
-
-    if($1->type->is_can_expandtoint()&&$3->type->is_can_expandtoint()){
-        $$->type = TYPE_INT;
-    }
-    else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -526,10 +494,10 @@ RelExp
     node->addChild($3);
     $$ = node;
 
-    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-        $$->type = TYPE_BOOL;
-    }
-    else $$->type = TYPE_ERROR;
+    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+    //     $$->type = TYPE_BOOL;
+    // }
+    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -545,10 +513,10 @@ EqExp
     node->addChild($3);
     $$ = node;
 
-    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-        $$->type = TYPE_BOOL;
-    }
-    else $$->type = TYPE_ERROR;
+    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+    //     $$->type = TYPE_BOOL;
+    // }
+    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -564,10 +532,10 @@ LandExp
     node->addChild($3);
     $$ = node;
 
-    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-        $$->type = TYPE_BOOL;
-    }
-    else $$->type = TYPE_ERROR; 
+    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+    //     $$->type = TYPE_BOOL;
+    // }
+    // else $$->type = TYPE_ERROR; 
 }
 ;
 
@@ -583,10 +551,10 @@ LorExp
     node->addChild($3);
     $$ = node;
 
-    if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
-        $$->type = TYPE_BOOL;
-    }
-    else $$->type = TYPE_ERROR;
+    // if($1->type->is_can_shrinktobool()&&$3->type->is_can_shrinktobool()){
+    //     $$->type = TYPE_BOOL;
+    // }
+    // else $$->type = TYPE_ERROR;
 }
 ;
 
@@ -639,6 +607,9 @@ structdeclstmt
     $$ -> addChild($2); $$ -> var_name = $2 -> var_name; // has to record struct name
     $$ -> addChild($4);
     $$ -> addChild($6);
+
+    // to record the type in the first init node
+    $4->type = $$->type;
 }
 ;
 
