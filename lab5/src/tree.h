@@ -78,6 +78,13 @@ enum ItemType{
     ITEM_UFUNC,
 };
 
+struct Label{
+    string true_label;
+    string false_label;
+    string begin_label;
+    string next_label;
+};
+
 struct TreeNode {
 public:
     // items to record in SymbolTable
@@ -123,26 +130,28 @@ public:
     bool b_val;
     bool is_dec=false; // to record if a NODE_VAR appears in a declstmt 
     string str_val;
-    string var_name;
-public:
-    // symbol will be off as default
-    bool is_SymbolTable_on = 0;
-    map<string,varItem> SymTable;
+    string var_name;   
 public:
     static string authType2String (AuthorityType authtype);
     static string nodeType2String (NodeType type);
     static string opType2String (OperatorType type);
     static string sType2String (StmtType type);
     static string iType2String (ItemType type);
+
 public:
+    // functions related to type check
     bool Type_Check(TreeNode*); // to check is_defined & is_dupdefined
     bool Type_Check_SecondTrip(TreeNode*); // to generate all types from symboltable
     bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type
     bool Type_Check_FourthTrip(TreeNode*); // to analyze all other statements and other tokens
     bool Is_Defined(string,TreeNode*);  // the TreeNode* param shall be ptr to root 
     bool Is_Dupdefined(string,TreeNode*); // the TreeNode* param shall be ptr to root
-    void fill_ident_type();
+
 public:
+    // params related to symbol table
+    bool is_SymbolTable_on = 0;
+    map<string,varItem> SymTable;
+    // functions related to symbol table
     static TreeNode* ptr_nst;
     static stack<TreeNode*> ptr_vec; 
     TreeNode(int lineno, NodeType type);
@@ -152,6 +161,23 @@ public:
     bool Is_InSymbolTable(int,string);
     void genSymbolTable();
     void printSymbolTable();
+
+public:
+    static int localvar_cnt;
+    static int label_cnt;
+
+    struct Label label;
+    void gen_label();
+    int new_label();
+    void gen_stmt_label(TreeNode* t);
+    void gen_expr_label(TreeNode* t);
+
+    void gen_code(ostream &out,TreeNode* t);
+    void gen_asm_header(ostream &out,TreeNode* t);
+    void gen_glob_decl(ostream &out,TreeNode* t);
+    void gen_rec_stmtorexpr_code(ostream &out,TreeNode* t);
+    void gen_stmt_code(ostream &out,TreeNode* t);
+    void gen_expr_code(ostream &out,TreeNode* t);
 };
 
 #endif

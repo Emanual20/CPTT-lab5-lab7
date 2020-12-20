@@ -778,7 +778,6 @@ string TreeNode::sType2String(StmtType type) {
     return "unknown type";
 }
 
-
 string TreeNode::nodeType2String (NodeType type){
     switch(type){
         case NODE_CONST: return "NODE_CONST";
@@ -845,4 +844,135 @@ string TreeNode::authType2String (AuthorityType type){
         case AUTH_PROTECTED:    return "protected ";
         default:                return "unknown authority..!";
     }
+}
+
+void TreeNode::gen_label(){
+
+}
+int TreeNode::new_label(){
+
+}
+void TreeNode::gen_stmt_label(TreeNode* t){
+
+}
+void TreeNode::gen_expr_label(TreeNode* t){
+
+}
+
+void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
+    if(this == root_ptr) this->gen_asm_header(asmo,root_ptr);
+
+    TreeNode* child_ptr = root_ptr->child;
+    // generate global variable declare
+    asmo<<endl<<"# define global vars here"<<endl;
+    asmo<<"\t.bss"<<endl;
+    while(child_ptr){
+        if(child_ptr->stype == STMT_VARDECL
+            || child_ptr->stype == STMT_CONSTDECL){
+            child_ptr->gen_glob_decl(asmo,child_ptr);
+        }
+        child_ptr = child_ptr -> sibling;
+    }
+    asmo<<endl<<endl<<"# my asm code here"<<endl;
+    asmo<<"\t.text"<<endl<<"\t.globl _start"<<endl;
+    // recursive generate code
+    this->gen_rec_stmtorexpr_code(asmo,root_ptr);
+    if(root_ptr->label.next_label!=""){
+        asmo<<root_ptr->label.next_label<<":"<<endl;
+    }
+    asmo<<"\tret"<<endl;
+}
+
+void TreeNode::gen_asm_header(ostream &asmo,TreeNode* t){
+    asmo<<"# my asm code header here"<<endl;
+}
+
+void TreeNode::gen_glob_decl(ostream &asmo,TreeNode* t){
+    // NOTE: the TreeNode ptr t is a NODE_PROG's child
+    // tmp_ptr point to first vardeclitem
+    TreeNode* tmp_ptr = t->child->sibling;
+    // asmo<<tmp_ptr->nodeID<<endl;
+    // asmo<<t->child->type->getTypeInfo()<<endl;
+    if(*(t->child->type) == *TYPE_INT){
+        while(tmp_ptr){
+            asmo<<"_"<<tmp_ptr->child->var_name<<":"<<endl;
+            asmo<<"\t.long\t";
+            if(tmp_ptr->child->sibling){
+                asmo<<tmp_ptr->child->sibling->int_val<<endl;
+            }
+            else asmo<<0<<endl;
+            asmo<<"\t.zero\t4"<<endl;
+            asmo<<"\t.align\t4"<<endl;
+            tmp_ptr = tmp_ptr->sibling;
+        }
+    }
+}
+
+void TreeNode::gen_rec_stmtorexpr_code(ostream &asmo,TreeNode* t){
+    if(t->nodeType == NODE_STMT){
+        this->gen_stmt_code(asmo,t);
+    }
+    else if(t->nodeType == NODE_EXPR){
+        this->gen_expr_code(asmo,t);
+    }
+}
+
+void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
+    // if (t->kind_kind == COMP_STMT)
+    // {
+    //     for (int i = 0; t->children[i]; i++)
+    //     {
+    //         recursive_gen_code(out, t->children[i]);
+    //         for (Node *p = t->children[i]->sibling; p; p = p->sibling)
+    //             recursive_gen_code(out, p);
+    //     }
+    // }
+    // else if (t->kind_kind == WHILE_STMT)
+    // {
+    //     if (t->label.begin_label != "")
+    //         out << t->label.begin_label << ":" << endl;
+    //     recursive_gen_code(out, t->children[0]);
+    //     recursive_gen_code(out, t->children[1]);
+    //     out << "\tjmp " << t->label.begin_label << endl;
+    // }
+    // else if (t->kind_kind == PRINT_STMT)
+    // {
+    //     /* ... */
+    // }
+    // /* ... */
+}
+
+void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
+    // Node *e1 = t->children[0];
+    // Node *e2 = t->children[1];
+    // switch (t->attr.op)
+    // {
+    // case ASSIGN:
+    //     break;
+
+    // case PLUS:
+    //     out << "\tmovl $";
+    //     if (e1->kind_kind == ID_EXPR)
+    //         out << "_" << symtbl.getname(e1->attr.symtbl_seq);
+    //     else if (e1->kind_kind == CONST_EXPR)
+    //         out << e1->attr.vali;
+    //     else out << "t" << e1->temp_var;
+    //     out << ", %eax" <<endl;
+    //     out << "\taddl $";
+    //     if (e2->kind_kind == ID_EXPR)
+    //         out << "_" << symtbl.getname(e2->attr.symtbl_seq);
+    //     else if (e2->kind_kind == CONST_EXPR)
+    //         out << e2->attr.vali;
+    //     else out << "t" << e2->temp_var;
+    //     out << ", %eax" << endl;
+    //     out << "\tmovl %eax, $t" << t->temp_var << endl;
+    //     break;
+    // case AND:
+    //     out << "\t# your own code of AND operation here" << endl;
+    //     out << "\tjl @1" << endl;
+    //     out << "\t# your asm code of AND operation end" << endl;
+    // case LT:
+    //     break;
+    // /* ... */
+    // }
 }
