@@ -113,7 +113,8 @@ public:
 public:
     AuthorityType authtype;
     OperatorType optype;  // if StmtType=STMT_EXP, it has property OperatorType
-    Type* type;  
+    Type* type;
+    Type* checktype; // to reserve type of function  
     StmtType stype;
     ItemType itype;
 

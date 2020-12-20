@@ -171,7 +171,7 @@ funcdef
     node -> addChild($6);
     $$ = node;
 }
-| T_VOID IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
+| TV IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
     TreeNode* node = new TreeNode($1->lineno,NODE_FUNC);
     node -> type = new Type(COMPOSE_FUNCTION); 
     node -> type -> retType = TYPE_VOID -> type; // retType
@@ -647,6 +647,8 @@ T: T_INT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;}
 | T_BOOL {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_BOOL;}
 | T_STRING {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_STRING;}
 ;
+
+TV: T_VOID {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_VOID;}
 
 AutT : KEY_PUBLIC {$$ = new TreeNode(lineno, NODE_AUTH); $$->authtype = AUTH_PUBLIC;}
 | KEY_PRIVATE {$$ = new TreeNode(lineno, NODE_AUTH); $$->authtype = AUTH_PRIVATE;}

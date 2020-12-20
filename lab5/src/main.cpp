@@ -29,16 +29,26 @@ int main(int argc, char *argv[])
         root->genNodeId(0);
         root->genSymbolTable();
         root->printAST();
+
         if(!root->Type_Check(root)){
             cout<<"type error"<<endl;
             return 0;
         }
+
+        // gen_identifier_types
         root->Type_Check_SecondTrip(root);
+
+        // expr type check
         if(!root->Type_Check_ThirdTrip(root)){
             cout<<"expr accordinate error"<<endl;
             return 0;
         }
-        root->Type_Check_FourthTrip(root);
+
+        // stmt type check
+        if(!root->Type_Check_FourthTrip(root)){
+            cout<<"stmt accordinate error"<<endl;
+            return 0;
+        }
     }
     return 0;
 }

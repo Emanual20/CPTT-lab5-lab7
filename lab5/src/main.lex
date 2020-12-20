@@ -146,7 +146,7 @@ STRING \".+\"
 {CHAR} {
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
-    node->int_val = yytext[1];
+    node->str_val = yytext;
     yylval = node;
     return CHAR;
 }

@@ -180,7 +180,7 @@ void TreeNode::printSpecialInfo() {
         case NODE_CONST:{          
             string typeinfo = this->type->getTypeInfo();
             if(typeinfo=="int") cout<<" "<<this->int_val<<" ";
-            else if(typeinfo=="char") cout<<" "<<this->ch_val<<" ";
+            else if(typeinfo=="char") cout<<" "<<this->str_val<<" ";
             else if(typeinfo=="bool") cout<<" "<<this->b_val<<" ";
             else if(typeinfo=="string") cout<<" "<<this->str_val<<" ";
 
@@ -519,25 +519,29 @@ bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
                         break;
                     }
                     default:{
-                        cout<<"undefined optype of STMT_EXP of NODE_EXPR in Type_Check_SecondTrip.."<<endl;
+                        ;
+                        //cout<<"undefined optype of STMT_EXP of NODE_EXPR in Type_Check_SecondTrip.."<<endl;
                     }
                 }
             }
             else{
-                cout<<"undefined StmtType of NODE_EXPR in Type_Check_ThirdTrip.."<<endl;
+                ;
+                //cout<<"undefined StmtType of NODE_EXPR in Type_Check_ThirdTrip.."<<endl;
             }
             break;
         }
         default:{
-            cout<<"undefined nodeType in Type_Check_ThirdTrip.."<<endl;
+            ;
+            //cout<<"undefined nodeType in Type_Check_ThirdTrip.."<<endl;
         }
     }
 
     if(this->type==TYPE_ERROR){
+        ret = false;
         cerr<<"expression type accordinate error in lineno "<<this->lineno<<endl;
     }
 
-    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_ThirdTrip(ptr);
+    if(this->sibling!=nullptr) ret = this->sibling->Type_Check_ThirdTrip(ptr) && ret;
     return ret;
 }
 
@@ -553,6 +557,10 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                     this->type = this->findChild(2)->type;
                 }
                 else this->type = TYPE_ERROR;
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong if_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_IFELSE:{
@@ -561,6 +569,10 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                     this->type = TYPE_VOID;
                 }
                 else this->type = TYPE_ERROR;
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong ifelse_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_WHILE:{
@@ -568,6 +580,10 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                     this->type = this->findChild(2)->type;
                 }
                 else this->type = TYPE_ERROR;
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong while_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_FOR:{
@@ -577,6 +593,10 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                     this->type = this->findChild(1)->type;
                 }
                 else this->type = TYPE_ERROR;
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong for_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_SKIP:{
@@ -584,27 +604,82 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                 break;
             }
             case STMT_BREAK:{
-                // didn't finish yet
+                TreeNode* tmp_ptr = this;
+                this->type = TYPE_ERROR;
+                while(tmp_ptr){
+                    if(tmp_ptr->stype == STMT_FOR || tmp_ptr->stype == STMT_WHILE){
+                        this->type = TYPE_VOID;
+                        break;
+                    }
+                    tmp_ptr = tmp_ptr -> fath;
+                }
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong break_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_CONTINUE:{
-                // didn't finish yet
+                TreeNode* tmp_ptr = this;
+                this->type = TYPE_ERROR;
+                while(tmp_ptr){
+                    if(tmp_ptr->stype == STMT_FOR || tmp_ptr->stype == STMT_WHILE){
+                        this->type = TYPE_VOID;
+                        break;
+                    }
+                    tmp_ptr = tmp_ptr -> fath;
+                }
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong continue_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_RETURN:{
-                // didn't finish yet
+                // TODO: didn't finish yet, we need to check the return type & params' types
+                // now just check if it is a void function
+                TreeNode* tmp_ptr = this;
+                bool is_have_return_value = (this->child != nullptr);
+
+                this->type = TYPE_ERROR;
+                while(tmp_ptr){
+                    if(tmp_ptr->nodeType == NODE_FUNC){
+                        if(tmp_ptr->type->retType == VALUE_VOID && is_have_return_value){
+                            this->type = TYPE_ERROR;
+                            cerr<<"[error] void func can't have return value.."<<endl;
+                            break;
+                        }
+                        this->type = TYPE_VOID;
+                        break;
+                    }
+                    tmp_ptr = tmp_ptr -> fath;
+                }
+
+                if(this->type == TYPE_ERROR){
+                    cerr<<"[error] wrong return_stmt grammar in lineno "<<this->lineno<<endl;
+                }
                 break;
             }
             case STMT_BLOCK:{
-                // didn't finish yet
+                TreeNode* tmp_ptr = this->child;
+                this->type = TYPE_VOID;
+                while(tmp_ptr){
+                    if(tmp_ptr->type == TYPE_ERROR){
+                        cerr<<"[error] wrong grammar in lineno "<<tmp_ptr->lineno<<endl; 
+                        this->type = TYPE_ERROR;
+                        break;
+                    }
+                    tmp_ptr = tmp_ptr -> sibling;
+                }
                 break;
             }
             case STMT_VARDECL:{
-                // didn't finish yet
+                // cuz we have finish undef & dupdef check in last trip
+                this->type = TYPE_VOID;
                 break;
             }
             case STMT_CONSTDECL:{
-                // didn't finish yet
+                // TODO: in v2.0 we have to finish this
                 break;
             }
             case STMT_STRUCTDECL:{
@@ -615,6 +690,42 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                 cout<<"we didn't support this type of statement yet.."<<endl;
             }
         }
+    }
+    else if(this->nodeType==NODE_FUNC){
+        this->checktype = this->findChild(3)->type;
+    }
+    else if(this->nodeType==NODE_PROG){
+        TreeNode* tmp_ptr = this->child;
+        this->type = TYPE_VOID;
+        while(tmp_ptr){
+            if(tmp_ptr->nodeType == NODE_STMT){
+                if(tmp_ptr->stype == STMT_VARDECL || tmp_ptr->stype == STMT_CONSTDECL){
+                    if(tmp_ptr->type == TYPE_ERROR){
+                        cerr<<"[error] mistake remaining in this decl in lineno "<<tmp_ptr->lineno<<" .."<<endl;
+                        this->type = TYPE_ERROR;
+                        break;
+                    }
+                }
+            }
+            else if(tmp_ptr->nodeType == NODE_FUNC){
+                if(tmp_ptr->checktype == TYPE_ERROR){
+                    cerr<<"[error] mistake remaining in function "<<tmp_ptr->var_name<<" .."<<endl;
+                    this->type = TYPE_ERROR;
+                    break;
+                }
+            }
+            else{
+                cout<<"u shall not reach here in Type_Check_FourthTrip.."<<endl;
+            }
+            tmp_ptr = tmp_ptr -> sibling;
+        }
+
+        if(this->type == TYPE_ERROR){
+            ret = false;
+            cerr<<"[error] mistake remaining in this program.."<<endl;
+        }
+
+        cout<<this->type->getTypeInfo()<<endl;
     }
 
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FourthTrip(ptr);

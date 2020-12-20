@@ -35,7 +35,6 @@ public:
     string getTypeInfo();
 public:
     bool operator ==(const Type t){
-        cout<<"i am here"<<endl;
         if(this->type==VALUE_BOOL
             ||this->type==VALUE_INT
             ||this->type==VALUE_CHAR
