@@ -166,9 +166,13 @@ public:
     static int localvar_cnt;
     static int label_cnt;
 
+    int intervar_num = -1;
+    void gen_intervar(TreeNode* t);
+
     struct Label label;
-    void gen_label();
-    int new_label();
+    void gen_label(TreeNode* root_ptr);
+    string new_label();
+    void gen_rec_stmtorexpr_label(TreeNode* t);
     void gen_stmt_label(TreeNode* t);
     void gen_expr_label(TreeNode* t);
 

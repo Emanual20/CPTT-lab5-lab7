@@ -195,6 +195,8 @@ void TreeNode::printSpecialInfo() {
             cout<<"children:["; this->printChildrenId(); cout<<"]";
             cout<<" optype: ";
             cout<<this->opType2String(this->optype);
+            cout<<" intervar_num: ";
+            cout<<this->intervar_num;
             break;
         }
         case NODE_TYPE:{
@@ -846,12 +848,85 @@ string TreeNode::authType2String (AuthorityType type){
     }
 }
 
-void TreeNode::gen_label(){
+void TreeNode::gen_intervar(TreeNode* t){
+    if(this->child!=nullptr) this->child->gen_intervar(t);
 
-}
-int TreeNode::new_label(){
+    TreeNode* ptr = this;
+    if(ptr->nodeType == NODE_EXPR){
+        switch(ptr->optype){
+            case OP_PLUS:
+            case OP_MINUS:
+            case OP_MUL:
+            case OP_DIV:
+            case OP_MOD:
+            case OP_LESS:
+            case OP_GREA:
+            case OP_LE:
+            case OP_GE:
+            case OP_EEQ:
+            case OP_NEQ:
+            case OP_LAND:
+            case OP_LOR:{
+                if(ptr->findChild(1)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
+                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
+                ptr->intervar_num = TreeNode::localvar_cnt;
+                TreeNode::localvar_cnt += 1;
+                break;
+            }
+            case OP_FPLUS:
+            case OP_FMINUS:
+            case OP_NOT:{
+                if(ptr->findChild(1)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
+                ptr->intervar_num = TreeNode::localvar_cnt;
+                TreeNode::localvar_cnt += 1;
+                break;
+            }
+            case OP_EQ:
+            case OP_PLUSEQ:
+            case OP_MINUSEQ:
+            case OP_MODEQ:
+            case OP_MULEQ:
+            case OP_DIVEQ:{
+                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
+                break;
+            }
+            default:{
+                cout<<endl<<"we don't support this optype: "<<ptr->opType2String(ptr->optype)<<endl;
+            }
+        }
+    }
 
+    if(this->sibling!=nullptr) this->sibling->gen_intervar(t);
 }
+
+void TreeNode::gen_label(TreeNode* root_ptr){
+    if(this!=root_ptr){
+        cerr<<"non-root node shall not call gen_label func.."<<endl;
+    }
+    this->label.begin_label = "_start";
+    this->gen_rec_stmtorexpr_label(this);
+}
+
+string TreeNode::new_label(){
+    string ret = "";
+    ret = ret + "label" + std::to_string(TreeNode::label_cnt);
+    TreeNode::label_cnt += 1;
+    return ret;
+}
+
+void TreeNode::gen_rec_stmtorexpr_label(TreeNode* t){
+    if(t->nodeType == NODE_STMT){
+        this->gen_stmt_label(t);
+    }
+    else if(t->nodeType == NODE_EXPR){
+        this->gen_expr_label(t);
+    }
+}
+
 void TreeNode::gen_stmt_label(TreeNode* t){
 
 }
