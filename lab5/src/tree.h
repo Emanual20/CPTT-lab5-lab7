@@ -94,6 +94,8 @@ public:
         Type* type;
     // the type pointer of this var don't record in fDecNode
         int dec_cnt = 0;
+    // local offset
+        int local_offset = -1;
     };
 
     int nodeID;
@@ -158,6 +160,7 @@ public:
     void OpenSymbolTable();
     void CloseSymbolTable();
     bool IsSymbolTableOn();
+    bool IsNeedSwitchScope();
     bool Is_InSymbolTable(int,string);
     void genSymbolTable();
     void printSymbolTable();
@@ -182,6 +185,8 @@ public:
     void gen_rec_stmtorexpr_code(ostream &out,TreeNode* t);
     void gen_stmt_code(ostream &out,TreeNode* t);
     void gen_expr_code(ostream &out,TreeNode* t);
+    void gen_localdec_code(ostream &asmo);
+    void recover_localdec_stack(ostream &asmo);
 };
 
 #endif

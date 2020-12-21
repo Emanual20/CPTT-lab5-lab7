@@ -1,4 +1,9 @@
 #include "tree.h"
+
+const int INT_SIZE = 4;
+const int ALLOC_MINIMUM_SIZE = 4;
+const int CHAR_SIZE = 1;
+
 void TreeNode::addChild(TreeNode* child) {
     if(this->child==nullptr) {this->child=child; this->child->fath = this; return;}
     
@@ -22,7 +27,7 @@ void TreeNode::addSibling(TreeNode* sibling){
 
 TreeNode* TreeNode::findChild(int offset){
     if(offset<=0){
-        cout<<"invalid offset param.."<<endl;
+        cout<<"invalid offset param < 0.."<<endl;
         return nullptr;
     }
     TreeNode* tmp_ptr = this->child;
@@ -96,7 +101,7 @@ void TreeNode::genSymbolTable(){
     bool isSwitch = false;
 
     // switch the scope and open this node's symboltable
-    if(this->nodeType==NODE_STMT&&(this->stype==STMT_STRUCTDECL||this->stype==STMT_BLOCK)){
+    if(this->IsNeedSwitchScope()){
         TreeNode::ptr_nst = this;
         TreeNode::ptr_vec.push(this);
         isSwitch=true;
@@ -153,6 +158,11 @@ void TreeNode::CloseSymbolTable(){
 
 bool TreeNode::IsSymbolTableOn(){
     return this->is_SymbolTable_on;
+}
+
+bool TreeNode::IsNeedSwitchScope(){
+    return this->nodeType == NODE_STMT 
+        &&(this->stype == STMT_STRUCTDECL || this->stype == STMT_BLOCK);
 }
 
 bool TreeNode::Is_InSymbolTable(int uselino,string var_name){
@@ -946,6 +956,8 @@ void TreeNode::gen_rec_stmtorexpr_label(TreeNode* t){
 
 void TreeNode::gen_stmt_label(TreeNode* t){
     // cout<<1<<endl;
+    if(this->nodeType!=NODE_STMT) return;
+
     switch(t->stype){
         case STMT_WHILE:{
 
@@ -999,6 +1011,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
                 t->sibling->label.begin_label = t->label.next_label;
             }
 
+            // recursion
             ptr_cond->gen_rec_stmtorexpr_label(ptr_cond);
             ptr_stmt->gen_rec_stmtorexpr_label(ptr_stmt);
 
@@ -1026,6 +1039,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
                 t->sibling->label.begin_label = t->label.next_label;
             }
 
+            // recursion
             ptr_cond->gen_rec_stmtorexpr_label(ptr_cond);
             ptr_firstmt->gen_rec_stmtorexpr_label(ptr_firstmt);
             ptr_secstmt->gen_rec_stmtorexpr_label(ptr_secstmt);
@@ -1037,8 +1051,39 @@ void TreeNode::gen_stmt_label(TreeNode* t){
         }
     }
 }
-void TreeNode::gen_expr_label(TreeNode* t){
 
+void TreeNode::gen_expr_label(TreeNode* t){
+    if(this->nodeType!=NODE_EXPR || !(*(this->type) == *TYPE_BOOL)){
+        return;
+    }
+    
+    TreeNode* child1 = t->findChild(1);
+    TreeNode* child2 = t->findChild(2);
+
+    switch(t->optype){
+        case OP_LAND:{
+            child1->label.true_label = child1->new_label();
+            child2->label.true_label = t->label.true_label;
+            child1->label.false_label = t->label.false_label;
+            child2->label.false_label = t->label.false_label;
+            break;
+        }
+        case OP_LOR:{
+            child1->label.false_label = child1->new_label();
+            child2->label.false_label = t->label.false_label;
+            child1->label.true_label = t->label.true_label;
+            child2->label.true_label = t->label.true_label;
+            break;
+        }
+        default:{
+            ;
+        }
+    }
+
+    if(child1!=nullptr)
+        child1->gen_rec_stmtorexpr_label(child1);
+    if(child2!=nullptr)
+        child2->gen_rec_stmtorexpr_label(child2);
 }
 
 void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
@@ -1091,12 +1136,42 @@ void TreeNode::gen_glob_decl(ostream &asmo,TreeNode* t){
 }
 
 void TreeNode::gen_rec_stmtorexpr_code(ostream &asmo,TreeNode* t){
+
     if(t->nodeType == NODE_STMT){
         this->gen_stmt_code(asmo,t);
     }
     else if(t->nodeType == NODE_EXPR){
         this->gen_expr_code(asmo,t);
     }
+}
+
+void TreeNode::gen_localdec_code(ostream &asmo){
+    // need to search from symboltable, since the symboltable must be on
+    if(!this->IsSymbolTableOn()){
+        return;
+    }
+
+    int var_num = this->SymTable.size();
+    // calc the local space need to allocate
+    // TODO: can expand by struct or function or something
+    int local_apply_space = ceil(var_num * 1.0 / ALLOC_MINIMUM_SIZE) * ALLOC_MINIMUM_SIZE * INT_SIZE;
+
+    // calc the local offset of vars in current symboltable
+    // TODO: you shall change this to support other types
+    int tmp_cnt = 0;
+    for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
+        it->second.local_offset = (ceil(var_num * 1.0 / ALLOC_MINIMUM_SIZE) * ALLOC_MINIMUM_SIZE - var_num) + INT_SIZE * tmp_cnt;
+        tmp_cnt += 1;
+    }
+
+    asmo<<"\tpushl\t%ebp"<<endl;
+    asmo<<"\tmovl\t%esp,%ebp"<<endl;
+    asmo<<"\tsubl\t"<<local_apply_space<<",%esp"<<endl;
+}
+
+void TreeNode::recover_localdec_stack(ostream &asmo){
+    asmo<<"\tmov\t%ebp,%esp"<<endl;
+    asmo<<"\tpopl\t%ebp"<<endl;
 }
 
 void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
