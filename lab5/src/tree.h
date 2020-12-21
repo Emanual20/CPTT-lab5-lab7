@@ -166,6 +166,7 @@ public:
     void printSymbolTable();
 
 public:
+    // gen_label
     static int localvar_cnt;
     static int label_cnt;
 
@@ -179,14 +180,19 @@ public:
     void gen_stmt_label(TreeNode* t);
     void gen_expr_label(TreeNode* t);
 
+public:
+    // gen_code
     void gen_code(ostream &out,TreeNode* t);
     void gen_asm_header(ostream &out,TreeNode* t);
     void gen_glob_decl(ostream &out,TreeNode* t);
-    void gen_rec_stmtorexpr_code(ostream &out,TreeNode* t);
+    void gen_rec_code(ostream &out,TreeNode* t);
     void gen_stmt_code(ostream &out,TreeNode* t);
     void gen_expr_code(ostream &out,TreeNode* t);
-    void gen_localdec_code(ostream &asmo);
-    void recover_localdec_stack(ostream &asmo);
+    void gen_func_code(ostream &out,TreeNode* t);
+    void gen_prog_code(ostream &out,TreeNode* t);
+    void gen_localdec_code(ostream &out);
+    void recover_localdec_stack(ostream &out);
+    string lookup_locglosymtab(ostream &out,TreeNode* t);
 };
 
 #endif

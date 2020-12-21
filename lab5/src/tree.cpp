@@ -2,10 +2,21 @@
 
 const int INT_SIZE = 4;
 const int ALLOC_MINIMUM_SIZE = 4;
+const int STACK_RESERVE_SIZE = 8;
 const int CHAR_SIZE = 1;
 
 void TreeNode::addChild(TreeNode* child) {
-    if(this->child==nullptr) {this->child=child; this->child->fath = this; return;}
+    if(this->child==nullptr) {
+        this->child=child;
+        TreeNode* tmp_ptr = this->child; 
+        while(tmp_ptr){
+            if(!tmp_ptr->fath){
+                tmp_ptr->fath = this;
+            }
+            tmp_ptr = tmp_ptr->sibling;
+        }
+        return;
+    }
     
     //find right position to insert a child
     TreeNode * it=this->child;
@@ -21,8 +32,13 @@ void TreeNode::addSibling(TreeNode* sibling){
     //find right position to insert a sibling
     TreeNode * it=this->sibling;
     for(;it->sibling!=nullptr;it=it->sibling){;}
+    
     it->sibling=sibling;
     it->sibling->left_sibling = it;
+    
+    if(!(it->sibling->fath)){
+        it->sibling->fath = it->fath;
+    }
 }
 
 TreeNode* TreeNode::findChild(int offset){
@@ -63,7 +79,11 @@ void TreeNode::printNodeInfo() {
     cout<<"Lno@"<<this->lineno;
     cout<<setw(8)<<"@"<<this->nodeID<<" ";
 
-    cout<<this->nodeType2String(this->nodeType)<<" ";
+    cout<<setw(11)<<this->nodeType2String(this->nodeType)<<" ";
+
+    if(this->fath){
+        cout<<setw(8)<<" fath:@"<<this->fath->nodeID<<" ";
+    }
 
     this->printSpecialInfo();
 
@@ -180,6 +200,7 @@ bool TreeNode::Is_InSymbolTable(int uselino,string var_name){
         the first decl lineno of b is smaller than the first use lineno
     */
     if(this->SymTable.find(var_name) != this->SymTable.end()){
+        // cerr<<this->SymTable.find(var_name)->second.fDecNode->lineno<<" "<<uselino<<endl;
         return this->SymTable.find(var_name)->second.fDecNode->lineno <= uselino;
     }
     else return false;
@@ -792,19 +813,21 @@ string TreeNode::sType2String(StmtType type) {
 
 string TreeNode::nodeType2String (NodeType type){
     switch(type){
-        case NODE_CONST: return "NODE_CONST";
-        case NODE_VAR:   return "NODE_VAR";
-        case NODE_EXPR:  return "NODE_EXPR";
-        case NODE_TYPE:  return "NODE_TYPE";
+        case NODE_CONST:  return "NODE_CONST";
+        case NODE_VAR:    return "NODE_VAR";
+        case NODE_EXPR:   return "NODE_EXPR";
+        case NODE_TYPE:   return "NODE_TYPE";
 
-        case NODE_OP:    return "NODE_OP";
-        case NODE_ITEM:  return "NODE_ITEM";
-        case NODE_LIST:  return "NODE_LIST";
-        case NODE_FUNC:  return "NODE_FUNC";
+        case NODE_OP:     return "NODE_OP";
+        case NODE_ITEM:   return "NODE_ITEM";
+        case NODE_LIST:   return "NODE_LIST";
+        case NODE_FUNC:   return "NODE_FUNC";
 
-        case NODE_STMT:  return "NODE_STMT";
-        case NODE_PROG:  return "NODE_PROG";
-        case NODE_AUTH:  return "NODE_AUTH";
+        case NODE_STMT:   return "NODE_STMT";
+        case NODE_PROG:   return "NODE_PROG";
+        case NODE_AUTH:   return "NODE_AUTH";
+
+        case NODE_ASSIST: return "NODE_ROOT-1";
     }
     return "unknown type";
 }
@@ -904,6 +927,9 @@ void TreeNode::gen_intervar(TreeNode* t){
                     TreeNode::localvar_cnt -= 1;
                 break;
             }
+            case OP_LVAL:{
+                break;
+            }
             default:{
                 cout<<endl<<"we don't support this optype: "<<ptr->opType2String(ptr->optype)<<endl;
             }
@@ -927,6 +953,7 @@ void TreeNode::gen_label(TreeNode* root_ptr){
         if(aim_node->nodeType == NODE_FUNC){
             // THIS IS A BLOCK NODE
             aim_node = aim_node->findChild(3);
+            // THIS IS THE FIRST NODE IN BLOCKLIST
             aim_node = aim_node->findChild(1);
             while(aim_node){
                 // cerr<<aim_node->nodeID<<endl;
@@ -1103,11 +1130,10 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     asmo<<endl<<endl<<"# my asm code here"<<endl;
     asmo<<"\t.text"<<endl<<"\t.globl _start"<<endl;
     // recursive generate code
-    this->gen_rec_stmtorexpr_code(asmo,root_ptr);
+    this->gen_rec_code(asmo,root_ptr);
     if(root_ptr->label.next_label!=""){
         asmo<<root_ptr->label.next_label<<":"<<endl;
     }
-    asmo<<"\tret"<<endl;
 }
 
 void TreeNode::gen_asm_header(ostream &asmo,TreeNode* t){
@@ -1135,13 +1161,19 @@ void TreeNode::gen_glob_decl(ostream &asmo,TreeNode* t){
     }
 }
 
-void TreeNode::gen_rec_stmtorexpr_code(ostream &asmo,TreeNode* t){
+void TreeNode::gen_rec_code(ostream &asmo,TreeNode* t){
 
     if(t->nodeType == NODE_STMT){
-        this->gen_stmt_code(asmo,t);
+        t->gen_stmt_code(asmo,t);
     }
     else if(t->nodeType == NODE_EXPR){
-        this->gen_expr_code(asmo,t);
+        t->gen_expr_code(asmo,t);
+    }
+    else if(t->nodeType == NODE_FUNC){
+        t->gen_func_code(asmo,t);
+    }
+    else if(t->nodeType == NODE_PROG){
+        t->gen_prog_code(asmo,t);
     }
 }
 
@@ -1154,27 +1186,65 @@ void TreeNode::gen_localdec_code(ostream &asmo){
     int var_num = this->SymTable.size();
     // calc the local space need to allocate
     // TODO: can expand by struct or function or something
-    int local_apply_space = ceil(var_num * 1.0 / ALLOC_MINIMUM_SIZE) * ALLOC_MINIMUM_SIZE * INT_SIZE;
+    int local_apply_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
 
     // calc the local offset of vars in current symboltable
     // TODO: you shall change this to support other types
     int tmp_cnt = 0;
     for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
-        it->second.local_offset = (ceil(var_num * 1.0 / ALLOC_MINIMUM_SIZE) * ALLOC_MINIMUM_SIZE - var_num) + INT_SIZE * tmp_cnt;
+        it->second.local_offset = -STACK_RESERVE_SIZE - tmp_cnt * INT_SIZE;
         tmp_cnt += 1;
     }
 
-    asmo<<"\tpushl\t%ebp"<<endl;
-    asmo<<"\tmovl\t%esp,%ebp"<<endl;
-    asmo<<"\tsubl\t"<<local_apply_space<<",%esp"<<endl;
+    asmo<<"\tpushl\t"<<"%ebp"<<endl;
+    asmo<<"\tmovl\t"<<"%esp,%ebp"<<endl;
+    asmo<<"\tsubl\t$"<<local_apply_space<<",%esp"<<endl<<endl;
 }
 
 void TreeNode::recover_localdec_stack(ostream &asmo){
-    asmo<<"\tmov\t%ebp,%esp"<<endl;
+    asmo<<endl<<"\tmovl\t%ebp,%esp"<<endl;
     asmo<<"\tpopl\t%ebp"<<endl;
 }
 
 void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
+    if(t->nodeType != NODE_STMT){
+        return;
+    }
+
+    if(t->stype == STMT_VARDECL){
+        TreeNode* declitem_ptr = t -> findChild(2);
+        while(declitem_ptr){
+            TreeNode* declitem_id_ptr = declitem_ptr -> findChild(1);
+            TreeNode* declitem_expr_ptr = declitem_ptr -> findChild(2);
+            TreeNode* smtb_temp_ptr = declitem_ptr;
+
+            while(smtb_temp_ptr){
+                if(smtb_temp_ptr->IsSymbolTableOn()
+                    && smtb_temp_ptr->Is_InSymbolTable
+                    (declitem_id_ptr->lineno,declitem_id_ptr->var_name)){
+                    break;
+                }
+                smtb_temp_ptr = smtb_temp_ptr -> fath;
+            }
+
+            if(declitem_expr_ptr -> nodeType == NODE_CONST){
+                // asmo<<"\txorl\t%eax, %eax"<<endl;
+                asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
+                asmo<<"\tmovl\t%eax, "<<smtb_temp_ptr->SymTable[declitem_id_ptr->var_name].local_offset<<"(%ebp)"<<endl<<endl;
+            }
+            else{
+                // generate expr_ptr asm code
+                declitem_expr_ptr -> gen_rec_code(asmo,declitem_expr_ptr);
+
+                // mov expr_ptr's interval reg's num to eax
+                // asmo<<"\txorl\t%eax, %eax"<<endl;
+                asmo<<"\tmovl\t$_lc"<<declitem_expr_ptr->intervar_num<<", %eax"<<endl;
+                asmo<<"\tmovl\t%eax, "<<smtb_temp_ptr->SymTable[declitem_id_ptr->var_name].local_offset<<"(%ebp)"<<endl<<endl;
+            }
+
+            declitem_ptr = declitem_ptr -> sibling;
+        }   
+    }
     // if (t->kind_kind == COMP_STMT)
     // {
     //     for (int i = 0; t->children[i]; i++)
@@ -1200,6 +1270,48 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
 }
 
 void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
+    if(this->nodeType != NODE_EXPR) return;
+
+    switch(this->optype){
+        case OP_PLUS:{
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
+
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+
+            if(ptr_param1 -> nodeType == NODE_EXPR){
+                if(ptr_param1->intervar_num != -1){
+                    asmo<<"\tmovl\t$_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_plus code"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t$"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+            }
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\taddl\t$_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_plus code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\taddl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t$"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tmovl\t%eax, $_lc"<<this->intervar_num<<endl;
+
+            break;
+        }
+    }
     // Node *e1 = t->children[0];
     // Node *e2 = t->children[1];
     // switch (t->attr.op)
@@ -1232,4 +1344,56 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
     //     break;
     // /* ... */
     // }
+}
+
+void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
+    if(this->nodeType!=NODE_FUNC) return;
+
+    // TODO: func shall push its param to stack
+
+    TreeNode* block_ptr = t->findChild(3);
+    if(block_ptr){
+        block_ptr->gen_localdec_code(asmo);
+
+        TreeNode* blockitem_ptr = block_ptr->findChild(1);
+        while(blockitem_ptr){
+            blockitem_ptr->gen_rec_code(asmo,blockitem_ptr);
+            blockitem_ptr = blockitem_ptr -> sibling;
+        }
+
+        block_ptr->recover_localdec_stack(asmo);
+        asmo<<"\tret"<<endl<<endl;
+    }
+}
+
+void TreeNode::gen_prog_code(ostream &asmo,TreeNode* t){
+    TreeNode* progitem_ptr = t -> findChild(1);
+
+    while(progitem_ptr){
+        if(progitem_ptr -> nodeType == NODE_FUNC){
+            progitem_ptr -> gen_func_code(asmo,progitem_ptr);
+        }
+        progitem_ptr = progitem_ptr -> sibling;
+    }
+}
+
+string TreeNode::lookup_locglosymtab(ostream &out,TreeNode* t){
+    TreeNode* ptr_temp = this;
+    string ret = "";
+    // TODO : how to find the var if it was not declare either in this scope or global
+    while(ptr_temp){
+        if(ptr_temp->IsSymbolTableOn()
+            && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
+            if(ptr_temp->nodeType == NODE_PROG){
+                ret = "_" + this->var_name;
+            }
+            else{
+                ret = to_string(ptr_temp->SymTable[this->var_name].local_offset) + "(%ebp)";
+            }
+            break;
+        }
+        ptr_temp = ptr_temp -> fath;
+    }
+
+    return ret;
 }

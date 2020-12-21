@@ -214,20 +214,10 @@ block
 ;
 
 blocklist
-: decl SEMICOLON {
-    //maybe further replace by NODE_LIST
+: statement{
     $$ = new TreeNode($1->lineno, NODE_STMT);
     $$->stype = STMT_BLOCK;
     $$->addChild($1);
-}
-| statement{
-    $$ = new TreeNode($1->lineno, NODE_STMT);
-    $$->stype = STMT_BLOCK;
-    $$->addChild($1);
-}
-| blocklist decl SEMICOLON {
-    $$ = $1;
-    $$->addChild($2);
 }
 | blocklist statement{
     $$ = $1;
@@ -246,6 +236,7 @@ statement
 | KEY_BREAK SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_BREAK;}
 | KEY_CONTINUE SEMICOLON {$$= new TreeNode(lineno, NODE_STMT); $$->stype = STMT_CONTINUE;}
 | assignstmt SEMICOLON {$$ = $1;}
+| decl SEMICOLON {$$ = $1;}
 | funccall {$$=$1;}
 ;
 

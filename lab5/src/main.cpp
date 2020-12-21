@@ -31,6 +31,8 @@ int main(int argc, char *argv[])
     if(root != NULL) {
         root->genNodeId(0);
         root->genSymbolTable();
+        
+        // generate the intervar mark used in generating codes
         root->gen_intervar(root);
         root->printAST();
 

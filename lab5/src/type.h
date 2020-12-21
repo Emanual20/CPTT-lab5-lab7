@@ -43,6 +43,7 @@ public:
             return this->type == t.type;
         }
         else{
+            return false;
             cout<<"we haven't finish compose struct comparision.."<<endl;
         }
     }
