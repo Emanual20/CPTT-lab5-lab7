@@ -908,7 +908,24 @@ void TreeNode::gen_label(TreeNode* root_ptr){
         cerr<<"non-root node shall not call gen_label func.."<<endl;
     }
     this->label.begin_label = "_start";
-    this->gen_rec_stmtorexpr_label(this);
+
+    TreeNode* compunit_ptr = this->child;
+
+    // for exery stmt & expr in func generate labels
+    while(compunit_ptr){
+        TreeNode* aim_node = compunit_ptr;
+        if(aim_node->nodeType == NODE_FUNC){
+            // THIS IS A BLOCK NODE
+            aim_node = aim_node->findChild(3);
+            aim_node = aim_node->findChild(1);
+            while(aim_node){
+                // cerr<<aim_node->nodeID<<endl;
+                aim_node->gen_rec_stmtorexpr_label(aim_node);
+                aim_node = aim_node->sibling;
+            }
+        }
+        compunit_ptr = compunit_ptr -> sibling;
+    }
 }
 
 string TreeNode::new_label(){
@@ -928,7 +945,97 @@ void TreeNode::gen_rec_stmtorexpr_label(TreeNode* t){
 }
 
 void TreeNode::gen_stmt_label(TreeNode* t){
+    // cout<<1<<endl;
+    switch(t->stype){
+        case STMT_WHILE:{
 
+            TreeNode* ptr_cond = t->findChild(1);
+            TreeNode* ptr_stmt = t->findChild(2);
+
+            // maybe begin label was made by left_sibling already
+            if(t->label.begin_label == "")
+                t->label.begin_label = this->new_label();
+
+            // label cond's true label & false label
+            if(t->label.next_label == ""){
+                t->label.next_label = t->new_label();
+            }
+            ptr_cond->label.false_label = t->label.next_label;
+            ptr_cond->label.true_label = ptr_stmt->label.begin_label = ptr_cond->new_label();
+
+            // label stmt's next_label as t.begin label
+            ptr_stmt->label.next_label = t->label.begin_label;
+
+            // deliver next label(maybe new in this node) to sibling's begin_label
+            if(t->sibling!=nullptr){
+                t->sibling->label.begin_label = t->label.next_label;
+            }
+
+            // recursion
+            ptr_cond->gen_rec_stmtorexpr_label(ptr_cond);
+            ptr_stmt->gen_rec_stmtorexpr_label(ptr_stmt);
+
+            break;
+        }
+        case STMT_IF:{
+
+            TreeNode* ptr_cond = t->findChild(1);
+            TreeNode* ptr_stmt = t->findChild(2);
+
+            if(t->label.begin_label == "")
+                t->label.begin_label = t->new_label();
+
+            // label cond's true label & false label
+            ptr_cond->label.true_label = ptr_stmt->label.begin_label = ptr_cond->new_label();
+            if(t->label.next_label == "")
+                t->label.next_label = t->new_label();
+            ptr_cond->label.false_label = t->label.next_label;
+
+            // stmt's next_label
+            ptr_stmt->label.next_label = t->label.next_label;
+
+            // deliver next label(maybe new in this node)
+            if(t->sibling!=nullptr){
+                t->sibling->label.begin_label = t->label.next_label;
+            }
+
+            ptr_cond->gen_rec_stmtorexpr_label(ptr_cond);
+            ptr_stmt->gen_rec_stmtorexpr_label(ptr_stmt);
+
+            break;
+        }
+        case STMT_IFELSE:{
+            TreeNode* ptr_cond = t->findChild(1);
+            TreeNode* ptr_firstmt = t->findChild(2);
+            TreeNode* ptr_secstmt = t->findChild(3);
+
+            if(t->label.begin_label == "")
+                t->label.begin_label = t->new_label();
+
+            // label cond's true label & false label
+            ptr_cond->label.true_label = ptr_firstmt->label.begin_label = ptr_cond->new_label();
+            ptr_cond->label.false_label = ptr_secstmt->label.begin_label = ptr_cond->new_label();
+
+            // generate next label
+            if(t->label.next_label == "")
+                t->label.next_label = t->new_label();
+            ptr_firstmt->label.next_label = ptr_secstmt->label.next_label = ptr_firstmt->new_label();
+
+            // deliver next label
+            if(t->sibling!=nullptr){
+                t->sibling->label.begin_label = t->label.next_label;
+            }
+
+            ptr_cond->gen_rec_stmtorexpr_label(ptr_cond);
+            ptr_firstmt->gen_rec_stmtorexpr_label(ptr_firstmt);
+            ptr_secstmt->gen_rec_stmtorexpr_label(ptr_secstmt);
+
+            break;
+        }
+        default:{
+            ;
+        }
+    }
 }
 void TreeNode::gen_expr_label(TreeNode* t){
 
