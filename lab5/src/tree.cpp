@@ -1291,7 +1291,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t$"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1303,8 +1303,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_CONST){
                 asmo<<"\taddl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t$"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %eax"<<endl;
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\taddl\t"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, $_lc"<<this->intervar_num<<endl;
@@ -1385,7 +1385,7 @@ string TreeNode::lookup_locglosymtab(ostream &out,TreeNode* t){
         if(ptr_temp->IsSymbolTableOn()
             && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
             if(ptr_temp->nodeType == NODE_PROG){
-                ret = "_" + this->var_name;
+                ret = "$_" + this->var_name;
             }
             else{
                 ret = to_string(ptr_temp->SymTable[this->var_name].local_offset) + "(%ebp)";
