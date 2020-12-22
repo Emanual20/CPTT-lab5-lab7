@@ -247,7 +247,7 @@ funccall
 
 scanfstmt
 : KEY_SCANF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
-    TreeNode* node = new TreeNode(lineno, NODE_FUNC);
+    TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
     node->type = TYPE_VOID;
     node->addChild($3);
     node->addChild($5);
@@ -258,7 +258,7 @@ scanfstmt
 
 printfstmt
 : KEY_PRINTF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
-    TreeNode* node = new TreeNode(lineno, NODE_FUNC);
+    TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
     node->type = TYPE_VOID;
     node->addChild($3);
     node->addChild($5);

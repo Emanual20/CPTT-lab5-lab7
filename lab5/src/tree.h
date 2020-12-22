@@ -16,6 +16,7 @@ enum NodeType
     NODE_ITEM,
     NODE_LIST, // for some func para list
     NODE_FUNC,
+    NODE_FUNCALL,
 
     NODE_STMT,
     NODE_PROG,
@@ -167,6 +168,10 @@ public:
     void printSymbolTable();
 
 public:
+    static int conststring_cnt;
+    string new_constring_name();
+
+public:
     // gen_label
     static int localvar_cnt;
     static int label_cnt;
@@ -206,6 +211,7 @@ public:
     void gen_stmt_code(ostream &out,TreeNode* t);
     void gen_expr_code(ostream &out,TreeNode* t);
     void gen_func_code(ostream &out,TreeNode* t);
+    void gen_funcall_code(ostream &asmo,TreeNode *t);
     void gen_prog_code(ostream &out,TreeNode* t);
     void gen_localdec_code(ostream &out);
     void recover_localdec_stack(ostream &out);
