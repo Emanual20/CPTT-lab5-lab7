@@ -31,30 +31,15 @@ int main(int argc, char *argv[])
     if(root != NULL) {
         root->genNodeId(0);
         root->genSymbolTable();
-        
+
+        if(root->Type_Check(root)==-1){
+            return 0;
+        }
+
         // generate the intervar mark used in generating codes
         root->gen_intervar(root);
+        root->gen_offset(root);
         root->printAST();
-
-        if(!root->Type_Check(root)){
-            cout<<"type error"<<endl;
-            return 0;
-        }
-
-        // gen_identifier_types
-        root->Type_Check_SecondTrip(root);
-
-        // expr type check
-        if(!root->Type_Check_ThirdTrip(root)){
-            cout<<"expr accordinate error"<<endl;
-            return 0;
-        }
-
-        // stmt type check
-        if(!root->Type_Check_FourthTrip(root)){
-            cout<<"stmt accordinate error"<<endl;
-            return 0;
-        }
 
         root->gen_label(root);
         root->gen_code(asmfo,root);

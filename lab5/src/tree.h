@@ -142,7 +142,8 @@ public:
 
 public:
     // functions related to type check
-    bool Type_Check(TreeNode*); // to check is_defined & is_dupdefined
+    int Type_Check(TreeNode*);
+    bool Type_Check_FirstTrip(TreeNode*); // to check is_defined & is_dupdefined
     bool Type_Check_SecondTrip(TreeNode*); // to generate all types from symboltable
     bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type
     bool Type_Check_FourthTrip(TreeNode*); // to analyze all other statements and other tokens
@@ -161,7 +162,7 @@ public:
     void CloseSymbolTable();
     bool IsSymbolTableOn();
     bool IsNeedSwitchScope();
-    bool Is_InSymbolTable(int,string);
+    bool Is_InSymbolTable(int, string);
     void genSymbolTable();
     void printSymbolTable();
 
@@ -179,6 +180,22 @@ public:
     void gen_rec_stmtorexpr_label(TreeNode* t);
     void gen_stmt_label(TreeNode* t);
     void gen_expr_label(TreeNode* t);
+
+public:
+    // manage local vars related params
+    int local_var_size = 0;
+    int thisscope_var_space = 0;
+    int scope_offset = 0;
+    // call calc_local_offset & dist_scope_offset to gen_offset
+    void gen_offset(TreeNode* t);
+    // calc local offset in now scope
+    void calc_local_offset(TreeNode* rt);
+    // calc the max local vars will decl in this function, need to call at a bottom->top recursion
+    void calc_local_var_size();
+    // calc the vars in now local_vars, call in any recursion
+    void calc_thisscope_var_space();
+    // calc the scope offset, need to call in a top->bottom recursion
+    void dist_scope_offset();
 
 public:
     // gen_code

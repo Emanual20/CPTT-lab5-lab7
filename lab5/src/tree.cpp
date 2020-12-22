@@ -87,9 +87,9 @@ void TreeNode::printNodeInfo() {
 
     this->printSpecialInfo();
 
-    if(this->IsSymbolTableOn()==true){
-        this->printSymbolTable();
-    }
+    if(this->IsSymbolTableOn()) this->printSymbolTable();
+
+    cout<<" ["<<this->local_var_size<<" "<<thisscope_var_space<<" "<<scope_offset<<"]";
 
     cout<<endl;
 }
@@ -270,9 +270,35 @@ void TreeNode::printSpecialInfo() {
     }
 }
 
-bool TreeNode::Type_Check(TreeNode* root_ptr){
+int TreeNode::Type_Check(TreeNode *root_ptr){
+    if(this!=root_ptr) return -1;
+
+    if(!root_ptr->Type_Check_FirstTrip(root_ptr)){
+        cout<<"type error"<<endl;
+        return -1;
+    }
+
+    // gen_identifier_types
+    root_ptr->Type_Check_SecondTrip(root_ptr);
+
+    // expr type check
+    if(!root_ptr->Type_Check_ThirdTrip(root_ptr)){
+        cout<<"expr accordinate error"<<endl;
+        return -1;
+    }
+
+    // stmt type check
+    if(!root_ptr->Type_Check_FourthTrip(root_ptr)){
+        cout<<"stmt accordinate error"<<endl;
+        return -1;
+    }
+
+    return 1;
+}
+
+bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
     bool ret = true;
-    if(this->child!=nullptr) ret = ret && this->child->Type_Check(root_ptr);
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check_FirstTrip(root_ptr);
 
     if(this->nodeType==NODE_VAR){
         if(this->is_dec){
@@ -305,7 +331,7 @@ bool TreeNode::Type_Check(TreeNode* root_ptr){
         }
     }
     // recursive type check
-    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check(root_ptr);
+    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FirstTrip(root_ptr);
     return ret;
 }
 
@@ -882,9 +908,13 @@ string TreeNode::authType2String (AuthorityType type){
 }
 
 void TreeNode::gen_intervar(TreeNode* t){
+    // bottom -> top
     if(this->child!=nullptr) this->child->gen_intervar(t);
 
     TreeNode* ptr = this;
+    this->calc_thisscope_var_space();
+    this->calc_local_var_size();
+
     if(ptr->nodeType == NODE_EXPR){
         switch(ptr->optype){
             case OP_PLUS:
@@ -1182,23 +1212,19 @@ void TreeNode::gen_localdec_code(ostream &asmo){
     if(!this->IsSymbolTableOn()){
         return;
     }
+    // // only can be called by a func_node, cuz while a scope switched, don't mean will change ebp again
+    // if(this->nodeType!=NODE_FUNC){
+    //     return;
+    // }
 
-    int var_num = this->SymTable.size();
+    int var_num = this->local_var_size;
     // calc the local space need to allocate
     // TODO: can expand by struct or function or something
     int local_apply_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
 
-    // calc the local offset of vars in current symboltable
-    // TODO: you shall change this to support other types
-    int tmp_cnt = 0;
-    for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
-        it->second.local_offset = -STACK_RESERVE_SIZE - tmp_cnt * INT_SIZE;
-        tmp_cnt += 1;
-    }
-
     asmo<<"\tpushl\t"<<"%ebp"<<endl;
-    asmo<<"\tmovl\t"<<"%esp,%ebp"<<endl;
-    asmo<<"\tsubl\t$"<<local_apply_space<<",%esp"<<endl<<endl;
+    asmo<<"\tmovl\t"<<"%esp, %ebp"<<endl;
+    asmo<<"\tsubl\t$"<<local_apply_space<<", %esp"<<endl<<endl;
 }
 
 void TreeNode::recover_localdec_stack(ostream &asmo){
@@ -1216,21 +1242,11 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         while(declitem_ptr){
             TreeNode* declitem_id_ptr = declitem_ptr -> findChild(1);
             TreeNode* declitem_expr_ptr = declitem_ptr -> findChild(2);
-            TreeNode* smtb_temp_ptr = declitem_ptr;
-
-            while(smtb_temp_ptr){
-                if(smtb_temp_ptr->IsSymbolTableOn()
-                    && smtb_temp_ptr->Is_InSymbolTable
-                    (declitem_id_ptr->lineno,declitem_id_ptr->var_name)){
-                    break;
-                }
-                smtb_temp_ptr = smtb_temp_ptr -> fath;
-            }
 
             if(declitem_expr_ptr -> nodeType == NODE_CONST){
                 // asmo<<"\txorl\t%eax, %eax"<<endl;
                 asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<smtb_temp_ptr->SymTable[declitem_id_ptr->var_name].local_offset<<"(%ebp)"<<endl<<endl;
+                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(asmo,declitem_id_ptr)<<endl<<endl;
             }
             else{
                 // generate expr_ptr asm code
@@ -1239,7 +1255,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
                 // mov expr_ptr's interval reg's num to eax
                 // asmo<<"\txorl\t%eax, %eax"<<endl;
                 asmo<<"\tmovl\t$_lc"<<declitem_expr_ptr->intervar_num<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<smtb_temp_ptr->SymTable[declitem_id_ptr->var_name].local_offset<<"(%ebp)"<<endl<<endl;
+                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(asmo,declitem_id_ptr)<<endl<<endl;
             }
 
             declitem_ptr = declitem_ptr -> sibling;
@@ -1318,24 +1334,6 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
     // {
     // case ASSIGN:
     //     break;
-
-    // case PLUS:
-    //     out << "\tmovl $";
-    //     if (e1->kind_kind == ID_EXPR)
-    //         out << "_" << symtbl.getname(e1->attr.symtbl_seq);
-    //     else if (e1->kind_kind == CONST_EXPR)
-    //         out << e1->attr.vali;
-    //     else out << "t" << e1->temp_var;
-    //     out << ", %eax" <<endl;
-    //     out << "\taddl $";
-    //     if (e2->kind_kind == ID_EXPR)
-    //         out << "_" << symtbl.getname(e2->attr.symtbl_seq);
-    //     else if (e2->kind_kind == CONST_EXPR)
-    //         out << e2->attr.vali;
-    //     else out << "t" << e2->temp_var;
-    //     out << ", %eax" << endl;
-    //     out << "\tmovl %eax, $t" << t->temp_var << endl;
-    //     break;
     // case AND:
     //     out << "\t# your own code of AND operation here" << endl;
     //     out << "\tjl @1" << endl;
@@ -1385,10 +1383,13 @@ string TreeNode::lookup_locglosymtab(ostream &out,TreeNode* t){
         if(ptr_temp->IsSymbolTableOn()
             && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
             if(ptr_temp->nodeType == NODE_PROG){
-                ret = "$_" + this->var_name;
+                ret = "_" + this->var_name;
             }
             else{
-                ret = to_string(ptr_temp->SymTable[this->var_name].local_offset) + "(%ebp)";
+                // cerr<<this->nodeID<<" "<<this->scope_offset<<endl;
+                ret = to_string(- ptr_temp->scope_offset + INT_SIZE +
+                    ptr_temp->SymTable[this->var_name].local_offset) 
+                + "(%ebp)";
             }
             break;
         }
@@ -1396,4 +1397,56 @@ string TreeNode::lookup_locglosymtab(ostream &out,TreeNode* t){
     }
 
     return ret;
+}
+
+void TreeNode::gen_offset(TreeNode* rt){
+    this->dist_scope_offset();
+    this->calc_local_offset(rt);
+    if(this->sibling!=nullptr) this->sibling->gen_offset(rt);
+    if(this->child!=nullptr) this->child->gen_offset(rt);
+}
+
+void TreeNode::calc_local_offset(TreeNode* rt){
+    // calc the local offset of vars in current symboltable
+    // TODO: you shall change this to support other types
+    if(!this->IsSymbolTableOn()) return;
+
+    int tmp_cnt = 0;
+    for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
+        it->second.local_offset = tmp_cnt * INT_SIZE;
+        tmp_cnt += 1;
+    }
+}
+
+void TreeNode::calc_local_var_size(){
+    if(this->IsSymbolTableOn()){
+        this->local_var_size += this->SymTable.size();
+    }
+    if(this->nodeType != NODE_PROG && this->nodeType != NODE_FUNC){
+        this->fath->local_var_size = 
+        max(ceil(this->fath->local_var_size * 1.0 / 4) * 4,
+            ceil(this->local_var_size * 1.0 / 4) * 4);
+    }
+}
+
+void TreeNode::calc_thisscope_var_space(){
+    if(this->IsNeedSwitchScope() && this->IsSymbolTableOn()){
+        int var_num = this->SymTable.size();
+        // calc the local space need to allocate
+        // TODO: can expand by struct or function or something
+        this->thisscope_var_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
+    }
+}
+
+void TreeNode::dist_scope_offset(){
+
+    if(this->IsNeedSwitchScope()){
+        this->scope_offset += this->thisscope_var_space;
+    }
+
+    TreeNode* child_ptr = this->findChild(1);
+    while(child_ptr){
+        child_ptr->scope_offset += this->scope_offset;
+        child_ptr = child_ptr -> sibling;
+    }
 }
