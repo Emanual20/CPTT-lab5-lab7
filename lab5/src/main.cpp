@@ -13,7 +13,7 @@ int TreeNode::localvar_cnt = 0;
 int TreeNode::label_cnt = 0;
 int TreeNode::conststring_cnt = 0;
 
-ofstream asmfo("asm_output/myasm.asm");
+ofstream asmfo("asm_output/myasm.s");
 
 int main(int argc, char *argv[])
 {

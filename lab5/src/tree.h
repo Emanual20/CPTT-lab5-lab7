@@ -170,6 +170,8 @@ public:
 public:
     static int conststring_cnt;
     string new_constring_name();
+    void gen_constring_decl(ostream &out, TreeNode* t);
+    void asmo_constring(ostream &out, TreeNode* t);
 
 public:
     // gen_label
