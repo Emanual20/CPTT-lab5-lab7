@@ -219,7 +219,7 @@ public:
     void gen_prog_code(ostream &out,TreeNode* t);
     void gen_localdec_code(ostream &out);
     void recover_localdec_stack(ostream &out);
-    string lookup_locglosymtab(ostream &out,TreeNode* t);
+    string lookup_locglosymtab(TreeNode* t);
 };
 
 #endif

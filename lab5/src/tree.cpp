@@ -1308,7 +1308,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             if(declitem_expr_ptr -> nodeType == NODE_CONST){
                 // asmo<<"\txorl\t%eax, %eax"<<endl;
                 asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(asmo,declitem_id_ptr)<<endl<<endl;
+                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
             }
             else{
                 // generate expr_ptr asm code
@@ -1317,7 +1317,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
                 // mov expr_ptr's interval reg's num to eax
                 // asmo<<"\txorl\t%eax, %eax"<<endl;
                 asmo<<"\tmovl\t_lc"<<declitem_expr_ptr->intervar_num<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(asmo,declitem_id_ptr)<<endl<<endl;
+                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
             }
 
             declitem_ptr = declitem_ptr -> sibling;
@@ -1339,10 +1339,6 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
     //     recursive_gen_code(out, t->children[0]);
     //     recursive_gen_code(out, t->children[1]);
     //     out << "\tjmp " << t->label.begin_label << endl;
-    // }
-    // else if (t->kind_kind == PRINT_STMT)
-    // {
-    //     /* ... */
     // }
     // /* ... */
 }
@@ -1369,7 +1365,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1382,7 +1378,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\taddl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_VAR){
-                asmo<<"\taddl\t"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %eax"<<endl;
+                asmo<<"\taddl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1407,7 +1403,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1420,7 +1416,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tsubl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_VAR){
-                asmo<<"\tsubl\t"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %eax"<<endl;
+                asmo<<"\tsubl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1446,7 +1442,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             asmo<<"\tcltd"<<endl;
@@ -1461,7 +1457,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tidivl\t$"<<ptr_param2->int_val<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_VAR){
-                asmo<<"\tidivl\t"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<endl;
+                asmo<<"\tidivl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<endl;
             }
 
             if(this->optype == OP_DIV)
@@ -1491,7 +1487,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1504,7 +1500,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %edx"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(asmo,ptr_param2)<<", %edx"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %edx"<<endl;
             }
 
             asmo<<"\timull\t%edx, %eax"<<endl;
@@ -1527,7 +1523,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1548,7 +1544,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
             asmo<<"\tnegl\t%eax"<<endl;
@@ -1556,6 +1552,64 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
 
             break;
         }
+        case OP_LESS:
+        case OP_LE:
+        case OP_GREA:
+        case OP_GE:
+        case OP_NEQ:
+        case OP_EEQ:{
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
+
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+
+            if(ptr_param1 -> nodeType == NODE_EXPR){
+                if(ptr_param1->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+            }
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tcmpl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tcmpl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tcmpl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            if(this->optype == OP_EEQ)
+                asmo<<"\tsete\t%al"<<endl;
+            else if(this->optype == OP_NEQ)
+                asmo<<"\tsetne\t%al"<<endl;
+            else if(this->optype == OP_LESS)
+                asmo<<"\tsetl\t%al"<<endl;
+            else if(this->optype == OP_LE)
+                asmo<<"\tsetle\t%al"<<endl;
+            else if(this->optype == OP_GREA)
+                asmo<<"\tsetg\t%al"<<endl;
+            else if(this->optype == OP_GE)
+                asmo<<"\tsetge\t%al"<<endl;
+
+            asmo<<"\tmovzbl\t%al, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+
+            break;
+        }
+
     }
 }
 
@@ -1613,7 +1667,7 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
                 asmo<<"\tmovl\t$"<<itemdata_ptr->int_val<<", %eax"<<endl;
             }
             else if(itemdata_ptr -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(asmo,itemdata_ptr)<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
             }
             asmo<<"\tpushl\t%eax"<<endl;
 
@@ -1625,7 +1679,6 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
         asmo<<"\tcall\tprintf"<<endl;
         asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl << endl;
     }
-
 }
 
 void TreeNode::gen_prog_code(ostream &asmo,TreeNode* t){
@@ -1639,7 +1692,7 @@ void TreeNode::gen_prog_code(ostream &asmo,TreeNode* t){
     }
 }
 
-string TreeNode::lookup_locglosymtab(ostream &out,TreeNode* t){
+string TreeNode::lookup_locglosymtab(TreeNode* t){
     TreeNode* ptr_temp = this;
     string ret = "";
     // TODO : how to find the var if it was not declare either in this scope or global
