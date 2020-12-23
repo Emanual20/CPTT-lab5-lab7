@@ -980,6 +980,9 @@ void TreeNode::gen_intervar(TreeNode* t){
             case OP_DIVEQ:{
                 if(ptr->findChild(2)->nodeType == NODE_EXPR)
                     TreeNode::localvar_cnt -= 1;
+                ptr->intervar_num = TreeNode::localvar_cnt;
+                TreeNode::localvar_cnt += 1;
+                TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
             case OP_LVAL:{
@@ -1084,6 +1087,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             TreeNode* ptr_cond = t->findChild(1);
             TreeNode* ptr_stmt = t->findChild(2);
 
+            // begin label will print out of this func
             if(t->label.begin_label == "")
                 t->label.begin_label = t->new_label();
 
@@ -1112,6 +1116,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             TreeNode* ptr_firstmt = t->findChild(2);
             TreeNode* ptr_secstmt = t->findChild(3);
 
+            // begin label will print out of this func
             if(t->label.begin_label == "")
                 t->label.begin_label = t->new_label();
 
@@ -1248,6 +1253,9 @@ void TreeNode::gen_intervardecl_code(ostream &asmo, TreeNode* t){
 }
 
 void TreeNode::gen_rec_code(ostream &asmo,TreeNode* t){
+    // generate every node begin_label, if exist
+    if(t->label.begin_label!="")
+        asmo<<t->label.begin_label<<":"<<endl;
 
     if(t->nodeType == NODE_STMT){
         t->gen_stmt_code(asmo,t);
@@ -1324,6 +1332,68 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
 
             declitem_ptr = declitem_ptr -> sibling;
         }   
+    }
+    else if(t->stype == STMT_IF){
+        TreeNode* cond_ptr = t -> findChild(1);
+        TreeNode* stmt_ptr = t -> findChild(2);
+
+        // begin label will print out of this func
+        // if(t->label.begin_label!="")
+        //     asmo<<t->label.begin_label<<":"<<endl;
+
+        // TODO: pack these codes to a function may be explicit
+        if(cond_ptr -> nodeType == NODE_EXPR){
+            cond_ptr->gen_rec_code(asmo,cond_ptr);
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<endl;
+        }
+
+        asmo<<"\tcmpl\t$0, %eax"<<endl;
+        asmo<<"\tje\t"<<cond_ptr->label.false_label<<endl<<endl;
+        stmt_ptr->gen_rec_code(asmo,stmt_ptr);
+    }
+    else if(t->stype == STMT_IFELSE){
+        TreeNode* cond_ptr = t -> findChild(1);
+        TreeNode* stmt1_ptr = t -> findChild(2);
+        TreeNode* stmt2_ptr = t -> findChild(3);
+
+        // begin label will print out of this func
+        // if(t->label.begin_label!="")
+        //     asmo<<t->label.begin_label<<":"<<endl;
+
+        // TODO: pack these codes to a function may be explicit
+        if(cond_ptr -> nodeType == NODE_EXPR){
+            cond_ptr->gen_rec_code(asmo,cond_ptr);
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<endl;
+        }
+
+        asmo<<"\tcmpl\t$0, %eax"<<endl;
+        asmo<<"\tje\t"<<cond_ptr->label.false_label<<endl<<endl;
+
+        asmo<<cond_ptr->label.true_label<<":"<<endl;
+        stmt1_ptr->gen_rec_code(asmo,stmt1_ptr);
+        asmo<<"\tjmp\t"<<t->label.next_label<<endl<<endl;
+
+        asmo<<cond_ptr->label.false_label<<":"<<endl;
+        stmt2_ptr->gen_rec_code(asmo,stmt2_ptr);
+    }
+    else if(t->stype == STMT_BLOCK){
+        TreeNode* blockitem_ptr = t -> findChild(1);
+        while(blockitem_ptr){
+            blockitem_ptr->gen_rec_code(asmo,blockitem_ptr);
+            blockitem_ptr = blockitem_ptr -> sibling;
+        }
     }
     // if (t->kind_kind == COMP_STMT)
     // {
@@ -1611,7 +1681,34 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
 
             break;
         }
+        case OP_EQ:{
+            // lval expr node ptr
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_lvalparam = ptr_param1->findChild(1);
+            // lval_expr '=' lor_expr, gen lor_expr code recursively
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+            asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl<<endl;
+            break;
+        }
     }
 }
 
@@ -1624,11 +1721,8 @@ void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
     if(block_ptr){
         block_ptr->gen_localdec_code(asmo);
 
-        TreeNode* blockitem_ptr = block_ptr->findChild(1);
-        while(blockitem_ptr){
-            blockitem_ptr->gen_rec_code(asmo,blockitem_ptr);
-            blockitem_ptr = blockitem_ptr -> sibling;
-        }
+        // generate codes for every stmt in block
+        block_ptr->gen_rec_code(asmo,block_ptr);
 
         block_ptr->recover_localdec_stack(asmo);
         asmo<<"\tret"<<endl<<endl;
