@@ -9,6 +9,7 @@ using namespace std;
 
 TreeNode* TreeNode::ptr_nst = new TreeNode(-1,NODE_ASSIST);
 stack<TreeNode*> TreeNode::ptr_vec = stack<TreeNode*>();
+int TreeNode::max_localvar_cnt = 0;
 int TreeNode::localvar_cnt = 0;
 int TreeNode::label_cnt = 0;
 int TreeNode::conststring_cnt = 0;

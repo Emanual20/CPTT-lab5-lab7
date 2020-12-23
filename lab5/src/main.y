@@ -126,6 +126,7 @@ declareitem
 : IDENTIFIER LOP_ASSIGN expr{
     TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
     node->itype = ITEM_DECL;
+    node->optype = OP_EQ;
     $1->is_dec=true;
     node->addChild($1);
     node->addChild($3);

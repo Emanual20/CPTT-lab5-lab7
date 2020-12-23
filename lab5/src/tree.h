@@ -176,6 +176,7 @@ public:
 public:
     // gen_label
     static int localvar_cnt;
+    static int max_localvar_cnt;
     static int label_cnt;
 
     int intervar_num = -1;
@@ -209,6 +210,7 @@ public:
     void gen_code(ostream &out,TreeNode* t);
     void gen_asm_header(ostream &out,TreeNode* t);
     void gen_glob_decl(ostream &out,TreeNode* t);
+    void gen_intervardecl_code(ostream &out, TreeNode* t);
     void gen_rec_code(ostream &out,TreeNode* t);
     void gen_stmt_code(ostream &out,TreeNode* t);
     void gen_expr_code(ostream &out,TreeNode* t);

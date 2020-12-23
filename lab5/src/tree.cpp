@@ -959,6 +959,7 @@ void TreeNode::gen_intervar(TreeNode* t){
                     TreeNode::localvar_cnt -= 1;
                 ptr->intervar_num = TreeNode::localvar_cnt;
                 TreeNode::localvar_cnt += 1;
+                TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
             case OP_FPLUS:
@@ -968,6 +969,7 @@ void TreeNode::gen_intervar(TreeNode* t){
                     TreeNode::localvar_cnt -= 1;
                 ptr->intervar_num = TreeNode::localvar_cnt;
                 TreeNode::localvar_cnt += 1;
+                TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
             case OP_EQ:
@@ -985,6 +987,14 @@ void TreeNode::gen_intervar(TreeNode* t){
             }
             default:{
                 cout<<endl<<"we don't support this optype: "<<ptr->opType2String(ptr->optype)<<endl;
+            }
+        }
+    }
+    else if(this->nodeType == NODE_ITEM){
+        if(this->itype == ITEM_DECL){
+            if(this->optype == OP_EQ){
+                if(this->findChild(2)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
             }
         }
     }
@@ -1170,9 +1180,13 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     if(this == root_ptr) this->gen_asm_header(asmo,root_ptr);
 
     TreeNode* child_ptr = root_ptr->child;
+    asmo<<"\t.bss"<<endl;
+    // generate all the intermediate vars decl in global
+    this->gen_intervardecl_code(asmo,this);
+
     // generate global variable declare
     asmo<<endl<<"# define global vars here"<<endl;
-    asmo<<"\t.bss"<<endl;
+    asmo<<"\t.data"<<endl;
     while(child_ptr){
         if(child_ptr->stype == STMT_VARDECL
             || child_ptr->stype == STMT_CONSTDECL){
@@ -1180,12 +1194,16 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
         }
         child_ptr = child_ptr -> sibling;
     }
+    
     // recursive generate constring
     asmo<<"# my const string here"<<endl;
+    asmo<<"\t.section\t.rodata"<<endl;
     this->gen_constring_decl(asmo,this);
 
     asmo<<endl<<endl<<"# my asm code here"<<endl;
-    asmo<<"\t.text"<<endl<<"\t.globl _start"<<endl<<endl;
+    asmo<<"\t.text"<<endl<<"\t.globl main"<<endl;
+    asmo<<"\t.type\tmain, @function"<<endl<<endl;
+    asmo<<"main:"<<endl;
     // recursive generate code
     this->gen_rec_code(asmo,root_ptr);
     if(root_ptr->label.next_label!=""){
@@ -1217,6 +1235,16 @@ void TreeNode::gen_glob_decl(ostream &asmo,TreeNode* t){
         }
     }
     asmo<<endl;
+}
+
+void TreeNode::gen_intervardecl_code(ostream &asmo, TreeNode* t){
+    for(int i=0;i<=TreeNode::max_localvar_cnt;i++){
+        asmo<<"_lc"<<i<<":"<<endl;
+        asmo<<"\t.long\t0"<<endl;
+        asmo<<"\t.zero\t4"<<endl;
+        asmo<<"\t.align\t4"<<endl;
+        asmo<<endl;
+    }
 }
 
 void TreeNode::gen_rec_code(ostream &asmo,TreeNode* t){
@@ -1259,7 +1287,10 @@ void TreeNode::gen_localdec_code(ostream &asmo){
 }
 
 void TreeNode::recover_localdec_stack(ostream &asmo){
-    asmo<<endl<<"\tmovl\t%ebp,%esp"<<endl;
+    // TODO: in level 2 we will change eax into ret params
+    asmo<<endl;
+    asmo<<"\tmovl\t$0, %eax"<<endl;
+    asmo<<"\tmovl\t%ebp, %esp"<<endl;
     asmo<<"\tpopl\t%ebp"<<endl;
 }
 
@@ -1418,6 +1449,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(asmo,ptr_param1)<<", %eax"<<endl;
             }
 
+            asmo<<"\tcltd"<<endl;
+
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
                     asmo<<"\tidivl\t_lc"<<ptr_param2->intervar_num<<endl;
@@ -1569,10 +1602,12 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
             TreeNode* itemdata_ptr = printitem_ptr -> findChild(1);
 
             if(itemdata_ptr -> nodeType == NODE_EXPR){
+                // NOTE: may cause some problem
+                itemdata_ptr -> gen_rec_code(asmo, itemdata_ptr);
                 if(itemdata_ptr->intervar_num != -1){
                     asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
                 }
-                else cerr<<"error in gen op_plus code"<<endl;
+                else cerr<<"error in gen printf code"<<endl;
             }
             else if(itemdata_ptr -> nodeType == NODE_CONST){
                 asmo<<"\tmovl\t$"<<itemdata_ptr->int_val<<", %eax"<<endl;
@@ -1588,7 +1623,7 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
         asmo<<"\tpushl\t$"<<strpara_ptr->var_name<<endl;
 
         asmo<<"\tcall\tprintf"<<endl;
-        asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl;
+        asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl << endl;
     }
 
 }
