@@ -50,7 +50,7 @@ TreeNode* TreeNode::findChild(int offset){
     TreeNode* tmp_ptr = this->child;
     for(int i=1;i<offset;i++){
         if(!(tmp_ptr->sibling)){
-            cout<<"invalid offset param "<<offset<<".."<<endl;
+            cerr<<"invalid offset param "<<offset<<" in findChild.."<<endl;
             return nullptr;
         }
         tmp_ptr = tmp_ptr->sibling;
@@ -785,7 +785,7 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
             cerr<<"[error] mistake remaining in this program.."<<endl;
         }
 
-        cout<<this->type->getTypeInfo()<<endl;
+        //cout<<this->type->getTypeInfo()<<endl;
     }
 
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FourthTrip(ptr);
@@ -1305,19 +1305,21 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             TreeNode* declitem_id_ptr = declitem_ptr -> findChild(1);
             TreeNode* declitem_expr_ptr = declitem_ptr -> findChild(2);
 
-            if(declitem_expr_ptr -> nodeType == NODE_CONST){
-                // asmo<<"\txorl\t%eax, %eax"<<endl;
-                asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
-            }
-            else{
-                // generate expr_ptr asm code
-                declitem_expr_ptr -> gen_rec_code(asmo,declitem_expr_ptr);
+            if(declitem_expr_ptr){
+                if(declitem_expr_ptr -> nodeType == NODE_CONST){
+                    // asmo<<"\txorl\t%eax, %eax"<<endl;
+                    asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
+                    asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
+                }
+                else{
+                    // generate expr_ptr asm code
+                    declitem_expr_ptr -> gen_rec_code(asmo,declitem_expr_ptr);
 
-                // mov expr_ptr's interval reg's num to eax
-                // asmo<<"\txorl\t%eax, %eax"<<endl;
-                asmo<<"\tmovl\t_lc"<<declitem_expr_ptr->intervar_num<<", %eax"<<endl;
-                asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
+                    // mov expr_ptr's interval reg's num to eax
+                    // asmo<<"\txorl\t%eax, %eax"<<endl;
+                    asmo<<"\tmovl\t_lc"<<declitem_expr_ptr->intervar_num<<", %eax"<<endl;
+                    asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab(declitem_id_ptr)<<endl<<endl;
+                }
             }
 
             declitem_ptr = declitem_ptr -> sibling;
@@ -1643,40 +1645,84 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
         TreeNode* strpara_ptr = this->findChild(1);
         TreeNode* printlist_ptr = this->findChild(2);
         int calc = 0;
-        TreeNode* printitem_ptr = printlist_ptr -> findChild(1);
 
-        while(printitem_ptr -> sibling){
-            printitem_ptr = printitem_ptr -> sibling;
-        }
+        if(printlist_ptr){
 
-        // push params from the rightmost
-        while(printitem_ptr){
-            calc += 1;
+            TreeNode* printitem_ptr = printlist_ptr -> findChild(1);
 
-            TreeNode* itemdata_ptr = printitem_ptr -> findChild(1);
+            while(printitem_ptr -> sibling){
+                printitem_ptr = printitem_ptr -> sibling;
+            }
 
-            if(itemdata_ptr -> nodeType == NODE_EXPR){
-                // NOTE: may cause some problem
-                itemdata_ptr -> gen_rec_code(asmo, itemdata_ptr);
-                if(itemdata_ptr->intervar_num != -1){
-                    asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
+            // push params from the rightmost
+            while(printitem_ptr){
+                calc += 1;
+
+                TreeNode* itemdata_ptr = printitem_ptr -> findChild(1);
+
+                if(itemdata_ptr -> nodeType == NODE_EXPR){
+                    // NOTE: may cause some problem
+                    itemdata_ptr -> gen_rec_code(asmo, itemdata_ptr);
+                    if(itemdata_ptr->intervar_num != -1){
+                        asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
+                    }
+                    else cerr<<"error in gen printf code"<<endl;
                 }
-                else cerr<<"error in gen printf code"<<endl;
-            }
-            else if(itemdata_ptr -> nodeType == NODE_CONST){
-                asmo<<"\tmovl\t$"<<itemdata_ptr->int_val<<", %eax"<<endl;
-            }
-            else if(itemdata_ptr -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
-            }
-            asmo<<"\tpushl\t%eax"<<endl;
+                else if(itemdata_ptr -> nodeType == NODE_CONST){
+                    asmo<<"\tmovl\t$"<<itemdata_ptr->int_val<<", %eax"<<endl;
+                }
+                else if(itemdata_ptr -> nodeType == NODE_VAR){
+                    asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
+                }
+                asmo<<"\tpushl\t%eax"<<endl;
 
-            printitem_ptr = printitem_ptr -> left_sibling;
+                printitem_ptr = printitem_ptr -> left_sibling;
+            }
         }
 
         asmo<<"\tpushl\t$"<<strpara_ptr->var_name<<endl;
-
         asmo<<"\tcall\tprintf"<<endl;
+        asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl << endl;
+    }
+    else if(this->var_name == "scanf"){
+        TreeNode* strpara_ptr = this->findChild(1);
+        TreeNode* scanflist_ptr = this->findChild(2);
+        int calc = 0;
+
+        if(scanflist_ptr){
+
+            TreeNode* scanfitem_ptr = scanflist_ptr -> findChild(1);
+
+            while(scanfitem_ptr -> sibling){
+                scanfitem_ptr = scanfitem_ptr -> sibling;
+            }
+
+            // push params from the rightmost
+            while(scanfitem_ptr){
+                calc += 1;
+
+                // item's first child is a lval expr
+                TreeNode* itemlval_ptr = scanfitem_ptr -> findChild(1);
+                // lval expr's first child is a NODE_VAR
+                TreeNode* itemdata_ptr = itemlval_ptr -> findChild(1);
+
+                if(itemdata_ptr -> nodeType == NODE_VAR){
+                    string ret_str = itemdata_ptr->lookup_locglosymtab(itemdata_ptr);
+                    if(ret_str.substr(ret_str.length()-6,6) == "(%ebp)"){
+                        asmo<<"\tleal\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
+                    }
+                    else{
+                        asmo<<"\tmovl\t$"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
+                    }
+                }
+                asmo<<"\tpushl\t%eax"<<endl;
+
+                scanfitem_ptr = scanfitem_ptr -> left_sibling;
+            }
+        }
+
+        asmo<<"\tpushl\t$"<<strpara_ptr->var_name<<endl;
+        asmo<<"\tcall\t__isoc99_scanf"<<endl;
         asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl << endl;
     }
 }

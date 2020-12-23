@@ -11,7 +11,7 @@
 %token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST KEY_STRUCT KEY_PUBLIC KEY_PRIVATE
 
 %token LOP_POINT
-%token LOP_MINUS LOP_PLUS LOP_NOT
+%token LOP_MINUS LOP_PLUS LOP_NOT LOP_QUOTE
 %token LOP_MUL LOP_DIV LOP_MOD
 %token LOP_LESS LOP_GREA LOP_LE LOP_GE
 %token LOP_EEQ LOP_NEQ
@@ -26,7 +26,7 @@
 
 %right LOP_LBRKET
 %left LOP_POINT LOP_RBRKET
-%right LOP_UMINUS LOP_UPLUS LOP_NOT
+%right LOP_UMINUS LOP_UPLUS LOP_NOT LOP_QUOTE
 %left LOP_MUL LOP_DIV LOP_MOD
 %left LOP_LESS LOP_GREA LOP_LE LOP_GE
 %left LOP_EEQ LOP_NEQ
@@ -247,7 +247,7 @@ funccall
 ;
 
 scanfstmt
-: KEY_SCANF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
+: KEY_SCANF LOP_LPAREN STRING LOP_COMMA sflist LOP_RPAREN{
     TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
     node->type = TYPE_VOID;
     node->addChild($3);
@@ -258,7 +258,7 @@ scanfstmt
 ;
 
 printfstmt
-: KEY_PRINTF LOP_LPAREN STRING LOP_COMMA spflist LOP_RPAREN{
+: KEY_PRINTF LOP_LPAREN STRING LOP_COMMA pflist LOP_RPAREN{
     TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
     node->type = TYPE_VOID;
     node->addChild($3);
@@ -266,9 +266,36 @@ printfstmt
     node->var_name="printf";
     $$ = node;
 }
+| KEY_PRINTF LOP_LPAREN STRING LOP_RPAREN{
+    TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
+    node->type = TYPE_VOID;
+    node->addChild($3);
+    node->var_name="printf";
+    $$ = node;
+}
 ;
 
-spflist
+sflist
+: LOP_QUOTE LValExp {
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_SPF;
+    expnode->addChild($2);
+    
+    TreeNode* node = new TreeNode(lineno, NODE_LIST);
+    node->addChild(expnode);
+    $$ = node;
+}
+| sflist LOP_COMMA LOP_QUOTE LValExp{
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_SPF;
+    expnode->addChild($4);
+    
+    $$ = $1;
+    $$->addChild(expnode);
+}
+;
+
+pflist
 : expr {
     TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
     expnode->itype = ITEM_SPF;
@@ -278,7 +305,7 @@ spflist
     node->addChild(expnode);
     $$ = node;
 }
-| spflist LOP_COMMA expr{
+| pflist LOP_COMMA expr{
     TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
     expnode->itype = ITEM_SPF;
     expnode->addChild($3);
@@ -672,6 +699,8 @@ AssignEqOp: LOP_PLUSEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_PLUSEQ;
 | LOP_MULEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_MULEQ;}
 | LOP_DIVEQ {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_DIVEQ;}
 ;
+
+QuoteOp: LOP_QUOTE {$$ = new TreeNode(lineno,NODE_OP); $$->optype=OP_QUOTE;}
 
 %%
 

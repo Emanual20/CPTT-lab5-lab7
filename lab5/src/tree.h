@@ -52,6 +52,7 @@ enum OperatorType{
     OP_MINUS, // -
     OP_FPLUS, // +
     OP_FMINUS, // -
+    OP_QUOTE, // &
     OP_NOT, // !
     OP_MUL, // *
     OP_DIV, // / 

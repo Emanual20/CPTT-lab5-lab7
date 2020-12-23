@@ -71,6 +71,7 @@ STRING \".+\"
 
 "," return LOP_COMMA;
 
+"&" return LOP_QUOTE;
 "(" return LOP_LPAREN;
 ")" return LOP_RPAREN;
 "[" return LOP_LBRKET;
