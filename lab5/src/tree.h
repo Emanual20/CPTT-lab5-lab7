@@ -112,6 +112,7 @@ public:
     void addChild(TreeNode*);
     void addSibling(TreeNode*);
     TreeNode* findChild(int offset);
+    TreeNode* findrightmostchild();
     
     void printNodeInfo();
     void printChildrenId();

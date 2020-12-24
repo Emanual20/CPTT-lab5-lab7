@@ -58,6 +58,15 @@ TreeNode* TreeNode::findChild(int offset){
     return tmp_ptr;
 }
 
+TreeNode* TreeNode::findrightmostchild(){
+    TreeNode* ptr_temp = this->findChild(1);
+    while(ptr_temp->sibling){
+        ptr_temp = ptr_temp->sibling;
+    }
+    if(!ptr_temp) cerr<<"this nodeID "<<this->nodeID<<" has no child"<<endl;
+    return ptr_temp;
+}
+
 TreeNode::TreeNode(int lineno, NodeType type) {
     this->lineno=lineno;
     this->nodeType=type;
@@ -90,7 +99,17 @@ void TreeNode::printNodeInfo() {
 
     if(this->IsSymbolTableOn()) this->printSymbolTable();
 
-    cout<<" ["<<this->local_var_size<<" "<<thisscope_var_space<<" "<<scope_offset<<"]";
+    // cout<<" ["<<this->local_var_size<<" "<<thisscope_var_space<<" "<<scope_offset<<"]";
+    cout<<endl<<"[";
+    if(this->label.begin_label!="")
+        cout<<"BL:"<<this->label.begin_label<<" ";
+    if(this->label.next_label!="")
+        cout<<"NL:"<<this->label.next_label<<" ";
+    if(this->label.true_label!="")
+        cout<<"TL:"<<this->label.true_label<<" ";
+    if(this->label.false_label!="")
+        cout<<"FL:"<<this->label.false_label<<" ";
+    cout<<"]";
 
     cout<<endl;
 }
@@ -1015,7 +1034,7 @@ void TreeNode::gen_label(TreeNode* root_ptr){
     if(this!=root_ptr){
         cerr<<"non-root node shall not call gen_label func.."<<endl;
     }
-    this->label.begin_label = "main";
+    // this->label.begin_label = "main";
 
     TreeNode* compunit_ptr = this->child;
 
@@ -1023,15 +1042,17 @@ void TreeNode::gen_label(TreeNode* root_ptr){
     while(compunit_ptr){
         TreeNode* aim_node = compunit_ptr;
         if(aim_node->nodeType == NODE_FUNC){
+            // generate main label for int main()
+            if(aim_node->var_name == "main")
+                aim_node->label.begin_label = "main";
             // THIS IS A BLOCK NODE
             aim_node = aim_node->findChild(3);
-            // THIS IS THE FIRST NODE IN BLOCKLIST
-            aim_node = aim_node->findChild(1);
-            while(aim_node){
-                // cerr<<aim_node->nodeID<<endl;
-                aim_node->gen_rec_stmtorexpr_label(aim_node);
-                aim_node = aim_node->sibling;
-            }
+            // while(aim_node){
+            //     // cerr<<aim_node->nodeID<<endl;
+            //     aim_node->gen_rec_stmtorexpr_label(aim_node);
+            //     aim_node = aim_node->sibling;
+            // }
+            aim_node->gen_rec_stmtorexpr_label(aim_node);
         }
         compunit_ptr = compunit_ptr -> sibling;
     }
@@ -1045,11 +1066,11 @@ string TreeNode::new_label(){
 }
 
 void TreeNode::gen_rec_stmtorexpr_label(TreeNode* t){
-    if(t->nodeType == NODE_STMT){
-        this->gen_stmt_label(t);
+    if(this->nodeType == NODE_STMT){
+        this->gen_stmt_label(this);
     }
-    else if(t->nodeType == NODE_EXPR){
-        this->gen_expr_label(t);
+    else if(this->nodeType == NODE_EXPR){
+        this->gen_expr_label(this);
     }
 }
 
@@ -1133,7 +1154,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             // generate next label
             if(t->label.next_label == "")
                 t->label.next_label = t->new_label();
-            ptr_firstmt->label.next_label = ptr_secstmt->label.next_label = ptr_firstmt->new_label();
+            ptr_firstmt->label.next_label = ptr_secstmt->label.next_label = t->label.next_label;
 
             // deliver next label
             if(t->sibling!=nullptr){
@@ -1145,6 +1166,57 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             ptr_firstmt->gen_rec_stmtorexpr_label(ptr_firstmt);
             ptr_secstmt->gen_rec_stmtorexpr_label(ptr_secstmt);
 
+            break;
+        }
+        case STMT_FOR:{
+            TreeNode* ptr_expr1 = t->findChild(2);
+            TreeNode* ptr_expr2 = t->findChild(3);
+            TreeNode* ptr_expr3 = t->findChild(4);
+            TreeNode* ptr_stmt = t->findChild(1);
+
+            if(t->label.begin_label == "")
+                t->label.begin_label = t->new_label();
+            ptr_expr1->label.begin_label = t->label.begin_label;
+
+            // label s2.begin_label
+            ptr_expr2->label.begin_label = ptr_expr1->label.next_label = new_label();
+
+            // label cond(expr2)'s true label & false label
+            ptr_expr2->label.true_label = ptr_stmt->label.begin_label = ptr_expr2->new_label();
+            if(t->label.next_label == "")
+                t->label.next_label = t->new_label();
+            ptr_expr2->label.false_label = t->label.next_label;
+
+            // NOTE: after run stmt_code, must run expr3 codes
+            ptr_expr3->label.next_label = ptr_expr2->label.begin_label;
+
+            // deliver next label(maybe new in this node)
+            if(t->sibling!=nullptr){
+                t->sibling->label.begin_label = t->label.next_label;
+            }
+
+            ptr_expr1->gen_rec_stmtorexpr_label(ptr_expr1);
+            ptr_expr2->gen_rec_stmtorexpr_label(ptr_expr2);
+            ptr_expr3->gen_rec_stmtorexpr_label(ptr_expr3);
+            ptr_stmt->gen_rec_stmtorexpr_label(ptr_stmt);
+
+            break;
+        }
+        case STMT_BLOCK:{
+            if(t->label.begin_label != "" && t->findChild(1)!=nullptr){
+                t->findChild(1)->label.begin_label = t->label.begin_label;
+            }
+
+            TreeNode* ptr_rightmostchild = t->findrightmostchild();
+            if(ptr_rightmostchild->label.next_label!="" && ptr_rightmostchild!=nullptr){
+                ptr_rightmostchild->label.next_label = t->label.next_label;
+            }
+
+            TreeNode* aim_node = t->findChild(1);
+            while(aim_node){
+                aim_node->gen_rec_stmtorexpr_label(aim_node);
+                aim_node = aim_node->sibling;
+            }
             break;
         }
         default:{
@@ -1259,8 +1331,8 @@ void TreeNode::gen_intervardecl_code(ostream &asmo, TreeNode* t){
 
 void TreeNode::gen_rec_code(ostream &asmo,TreeNode* t){
     // generate every node begin_label, if exist
-    if(t->label.begin_label!="")
-        asmo<<t->label.begin_label<<":"<<endl;
+    // if(t->label.begin_label!="")
+    //     asmo<<t->label.begin_label<<":"<<endl;
 
     if(t->nodeType == NODE_STMT){
         t->gen_stmt_code(asmo,t);
@@ -1313,6 +1385,9 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
     }
 
     if(t->stype == STMT_VARDECL){
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
+
         TreeNode* declitem_ptr = t -> findChild(2);
         while(declitem_ptr){
             TreeNode* declitem_id_ptr = declitem_ptr -> findChild(1);
@@ -1343,8 +1418,8 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         TreeNode* stmt_ptr = t -> findChild(2);
 
         // begin label will print out of this func
-        // if(t->label.begin_label!="")
-        //     asmo<<t->label.begin_label<<":"<<endl;
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
 
         // TODO: pack these codes to a function may be explicit
         if(cond_ptr -> nodeType == NODE_EXPR){
@@ -1368,8 +1443,8 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         TreeNode* stmt2_ptr = t -> findChild(3);
 
         // begin label will print out of this func
-        // if(t->label.begin_label!="")
-        //     asmo<<t->label.begin_label<<":"<<endl;
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
 
         // TODO: pack these codes to a function may be explicit
         if(cond_ptr -> nodeType == NODE_EXPR){
@@ -1404,7 +1479,8 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         TreeNode* cond_ptr = this->findChild(1);
         TreeNode* stmt_ptr = this->findChild(2);
 
-        asmo<<t->label.begin_label<<endl;
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
         
         if(cond_ptr -> nodeType == NODE_EXPR){
             cond_ptr->gen_rec_code(asmo,cond_ptr);
@@ -1412,6 +1488,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         }
         else if(cond_ptr -> nodeType == NODE_CONST){
             asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
+
         }
         else if(cond_ptr -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
@@ -1420,10 +1497,37 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         asmo<<"\tcmpl\t$0, %eax"<<endl;
         asmo<<"\tje\t"<<cond_ptr->label.false_label<<endl<<endl;
         stmt_ptr->gen_rec_code(asmo,stmt_ptr);
-        asmo<<"\tjmp\t"<<tt->label.begin_label<<endl;
+        asmo<<"\tjmp\t"<<t->label.begin_label<<endl;
     }
     else if(t->stype == STMT_FOR){
-        
+        TreeNode* ptr_expr1 = t->findChild(2);
+        TreeNode* ptr_expr2 = t->findChild(3);
+        TreeNode* ptr_expr3 = t->findChild(4);
+        TreeNode* ptr_stmt = t->findChild(1);
+
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
+
+        ptr_expr1->gen_rec_code(asmo,ptr_expr1);
+        asmo<<ptr_expr2->label.begin_label<<":"<<endl;
+
+        if(ptr_expr2 -> nodeType == NODE_EXPR){
+            ptr_expr2->gen_rec_code(asmo,ptr_expr2);
+            asmo<<"\tmovl\t_lc"<<ptr_expr2->intervar_num<<", %eax"<<endl;
+        }
+        else if(ptr_expr2 -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<ptr_expr2->int_val<<", %eax"<<endl;
+        }
+        else if(ptr_expr2 -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<ptr_expr2->lookup_locglosymtab(ptr_expr2)<<", %eax"<<endl;
+        }
+        asmo<<"\tcmpl\t$0, %eax"<<endl;
+        asmo<<"\tje\t"<<ptr_expr2->label.false_label<<endl;
+        //asmo<<ptr_expr2->label.true_label<<":"<<endl;
+        ptr_stmt->gen_rec_code(asmo,ptr_stmt);
+        ptr_expr3->gen_rec_code(asmo,ptr_expr3);
+        asmo<<"\tjmp\t"<<ptr_expr2->label.begin_label<<endl;
+        asmo<<endl;
     }
     // if (t->kind_kind == COMP_STMT)
     // {
@@ -1447,6 +1551,9 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
 
 void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
     if(this->nodeType != NODE_EXPR) return;
+
+    if(this->label.begin_label!="")
+        asmo<<this->label.begin_label<<":"<<endl;
 
     switch(this->optype){
         case OP_PLUS:{
@@ -1846,8 +1953,10 @@ void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
     if(this->nodeType!=NODE_FUNC) return;
 
     // TODO: func shall push its param to stack
+    if(this->label.begin_label!="")
+        asmo<<this->label.begin_label<<":"<<endl;
 
-    TreeNode* block_ptr = t->findChild(3);
+    TreeNode* block_ptr = this->findChild(3);
     if(block_ptr){
         block_ptr->gen_localdec_code(asmo);
 
@@ -1864,6 +1973,9 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
     if(this->nodeType != NODE_FUNCALL){
         return;
     }
+
+    if(this->label.begin_label!="")
+        asmo<<this->label.begin_label<<":"<<endl;
 
     if(this->var_name == "printf"){
         TreeNode* strpara_ptr = this->findChild(1);

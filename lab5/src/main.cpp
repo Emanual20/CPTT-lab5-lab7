@@ -42,9 +42,10 @@ int main(int argc, char *argv[])
         // generate the intervar mark used in generating codes
         root->gen_intervar(root);
         root->gen_offset(root);
-        root->printAST();
-
         root->gen_label(root);
+        
+        root->printAST();
+        
         root->gen_code(asmfo,root);
     }
     return 0;
