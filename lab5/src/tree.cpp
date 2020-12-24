@@ -1154,7 +1154,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             // generate next label
             if(t->label.next_label == "")
                 t->label.next_label = t->new_label();
-            ptr_firstmt->label.next_label = ptr_secstmt->label.next_label = t->label.next_label;
+            ptr_firstmt->label.next_label = ptr_secstmt->label.next_label = t->label.next_label;  
 
             // deliver next label
             if(t->sibling!=nullptr){
@@ -1235,6 +1235,7 @@ void TreeNode::gen_expr_label(TreeNode* t){
 
     switch(t->optype){
         case OP_LAND:{
+            cerr<<1<<endl;
             child1->label.true_label = child1->new_label();
             child2->label.true_label = t->label.true_label;
             child1->label.false_label = t->label.false_label;
@@ -1303,7 +1304,7 @@ void TreeNode::gen_glob_decl(ostream &asmo,TreeNode* t){
     TreeNode* tmp_ptr = t->child->sibling;
     // asmo<<tmp_ptr->nodeID<<endl;
     // asmo<<t->child->type->getTypeInfo()<<endl;
-    if(*(t->child->type) == *TYPE_INT){
+    if(*(t->child->type) == *TYPE_INT || *(t->child->type) == *TYPE_CHAR){
         while(tmp_ptr){
             asmo<<"_"<<tmp_ptr->child->var_name<<":"<<endl;
             asmo<<"\t.long\t";
@@ -1417,7 +1418,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         TreeNode* cond_ptr = t -> findChild(1);
         TreeNode* stmt_ptr = t -> findChild(2);
 
-        // begin label will print out of this func
+        // begin label
         if(t->label.begin_label!="")
             asmo<<t->label.begin_label<<":"<<endl;
 
@@ -1528,6 +1529,11 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         ptr_expr3->gen_rec_code(asmo,ptr_expr3);
         asmo<<"\tjmp\t"<<ptr_expr2->label.begin_label<<endl;
         asmo<<endl;
+    }
+    else{
+        // begin label will print out of this func
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
     }
     // if (t->kind_kind == COMP_STMT)
     // {
@@ -1719,8 +1725,9 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
 
             break;
         }
-        case OP_FPLUS:{
-
+        case OP_FPLUS:
+        case OP_FMINUS:
+        case OP_NOT:{
             TreeNode* ptr_param1 = this->findChild(1);
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
 
@@ -1737,30 +1744,19 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
 
-            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
-            break;
-        }
-        case OP_FMINUS:{
-
-            TreeNode* ptr_param1 = this->findChild(1);
-            if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
-
-            if(ptr_param1 -> nodeType == NODE_EXPR){
-                if(ptr_param1->intervar_num != -1){
-                    asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
-                }
-                else cerr<<"error in gen op_div code"<<endl;
+            if(this->optype == OP_FPLUS){
+                asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_CONST){
-                asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+            else if(this->optype == OP_FMINUS){
+                asmo<<"\tnegl\t%eax"<<endl;
+                asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+            else if(this->optype == OP_NOT){
+                asmo<<"\tcmpl\t$0, %eax"<<endl;
+                asmo<<"\tsete\t%al"<<endl;
+                asmo<<"\tmovzbl\t%al, %eax"<<endl;
+                asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
             }
-
-            asmo<<"\tnegl\t%eax"<<endl;
-            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
-
             break;
         }
         case OP_LESS:
@@ -1944,6 +1940,119 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             asmo<<"\timull\t%edx, %eax"<<endl;
             asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             asmo<<endl;
+            break;
+        }
+        case OP_LAND:{
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_param2 = this->findChild(2);
+
+            if(ptr_param1 -> nodeType == NODE_EXPR){
+                ptr_param1->gen_rec_code(asmo,ptr_param1);
+                if(ptr_param1->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tcmpl\t$0, %eax"<<endl;
+            asmo<<"\tje\t"<<this->label.false_label<<"_1"<<endl;
+        
+            asmo<<ptr_param1->label.true_label<<":"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                ptr_param2->gen_rec_code(asmo,ptr_param2);
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tcmpl\t$0, %eax"<<endl;
+            asmo<<"\tje\t"<<this->label.false_label<<"_1"<<endl;
+
+            asmo<<"\tmovl\t$1, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+            asmo<<"\tjmp\t"<<this->label.true_label<<endl;
+
+            asmo<<this->label.false_label<<"_1:"<<endl;
+            asmo<<"\tmovl\t$0, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+            asmo<<"\tjmp\t"<<this->label.false_label<<endl;
+
+            break;
+        }
+        case OP_LOR:{
+            // cerr<<"hello"<<endl;
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_param2 = this->findChild(2);
+
+            if(ptr_param1 -> nodeType == NODE_EXPR){
+                ptr_param1->gen_rec_code(asmo,ptr_param1);
+                if(ptr_param1->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param1 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tcmpl\t$0, %eax"<<endl;
+            asmo<<"\tjne\t"<<this->label.true_label<<"_1"<<endl;
+        
+            asmo<<ptr_param1->label.false_label<<":"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                ptr_param2->gen_rec_code(asmo,ptr_param2);
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_eeq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tcmpl\t$0, %eax"<<endl;
+            asmo<<"\tjne\t"<<this->label.true_label<<"_1"<<endl;
+
+            asmo<<"\tmovl\t$0, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+            asmo<<"\tjmp\t"<<this->label.false_label<<endl;
+
+            asmo<<this->label.true_label<<"_1:"<<endl;
+            asmo<<"\tmovl\t$1, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+            asmo<<"\tjmp\t"<<this->label.true_label<<endl;
+
+            break;
+        }
+        case OP_POINT:
+        case OP_QUOTE:
+        case OP_LVAL:
+        case OP_COMMA:{
+            break;
+        }
+        default:{
+            cerr<<"invalid optype in gen_expr_code.."<<endl;
             break;
         }
     }

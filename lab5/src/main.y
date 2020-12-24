@@ -419,6 +419,9 @@ PrimaryExp
 | STRING {
     $$ = $1;
 }
+| LOP_LPAREN LorExp LOP_RPAREN {
+    $$ = $2;
+}
 ;
 
 //left value expression for further process

@@ -16,7 +16,7 @@ OCT_INTEGER 0[0-7]+
 
 IDENTIFIER [[:alpha:]_][[:alpha:][:digit:]_]*
 
-CHAR \'.?\'
+CHAR (\'.?\')|(\'\\t\')|(\'\\n\')|(\'\\r\')|(\'\\t\')
 STRING \".+\"
 %%
 
@@ -148,6 +148,25 @@ STRING \".+\"
     TreeNode* node = new TreeNode(lineno, NODE_CONST);
     node->type = TYPE_CHAR;
     node->str_val = yytext;
+
+    if(node->str_val.length()==3){
+        node->int_val = node->str_val[1];
+    }
+    else if(node->str_val.length()==4 && (node->str_val)[1] == '\\'){
+        if(node->str_val[2] == 'f'){
+            node->int_val = 12;
+        }
+        else if(node->str_val[2] == 'n'){
+            node->int_val = 10;
+        }
+        else if(node->str_val[2] == 'r'){
+            node->int_val = 13;
+        }
+        else if(node->str_val[2] == 't'){
+            node->int_val = 9;
+        }
+    }
+
     yylval = node;
     return CHAR;
 }
@@ -173,6 +192,6 @@ STRING \".+\"
 {EOL} lineno++;
 
 . {
-    cerr << "[line "<< lineno <<" ] unknown character:" << yytext << endl;
+    cerr << "[line "<< lineno <<"] unknown character:" << yytext << endl;
 }
 %%
