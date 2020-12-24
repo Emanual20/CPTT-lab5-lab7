@@ -972,7 +972,6 @@ void TreeNode::gen_intervar(TreeNode* t){
                 TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
-            case OP_EQ:
             case OP_PLUSEQ:
             case OP_MINUSEQ:
             case OP_MODEQ:
@@ -980,11 +979,18 @@ void TreeNode::gen_intervar(TreeNode* t){
             case OP_DIVEQ:{
                 if(ptr->findChild(2)->nodeType == NODE_EXPR)
                     TreeNode::localvar_cnt -= 1;
+                break;
+            }
+            case OP_EQ:{
+                // NOTE: maybe OP_EQ's return num can be used as a expr to reassign
+                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                    TreeNode::localvar_cnt -= 1;
                 ptr->intervar_num = TreeNode::localvar_cnt;
                 TreeNode::localvar_cnt += 1;
                 TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
+
             case OP_LVAL:{
                 break;
             }
@@ -1009,7 +1015,7 @@ void TreeNode::gen_label(TreeNode* root_ptr){
     if(this!=root_ptr){
         cerr<<"non-root node shall not call gen_label func.."<<endl;
     }
-    this->label.begin_label = "_start";
+    this->label.begin_label = "main";
 
     TreeNode* compunit_ptr = this->child;
 
@@ -1208,7 +1214,6 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     asmo<<endl<<endl<<"# my asm code here"<<endl;
     asmo<<"\t.text"<<endl<<"\t.globl main"<<endl;
     asmo<<"\t.type\tmain, @function"<<endl<<endl;
-    asmo<<"main:"<<endl;
     // recursive generate code
     this->gen_rec_code(asmo,root_ptr);
     if(root_ptr->label.next_label!=""){
@@ -1350,7 +1355,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
         }
         else if(cond_ptr -> nodeType == NODE_VAR){
-            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<endl;
+            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1375,7 +1380,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
         }
         else if(cond_ptr -> nodeType == NODE_VAR){
-            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<endl;
+            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1394,6 +1399,31 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             blockitem_ptr->gen_rec_code(asmo,blockitem_ptr);
             blockitem_ptr = blockitem_ptr -> sibling;
         }
+    }
+    else if(t->stype == STMT_WHILE){
+        TreeNode* cond_ptr = this->findChild(1);
+        TreeNode* stmt_ptr = this->findChild(2);
+
+        asmo<<t->label.begin_label<<endl;
+        
+        if(cond_ptr -> nodeType == NODE_EXPR){
+            cond_ptr->gen_rec_code(asmo,cond_ptr);
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<cond_ptr->int_val<<", %eax"<<endl;
+        }
+        else if(cond_ptr -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
+        }
+
+        asmo<<"\tcmpl\t$0, %eax"<<endl;
+        asmo<<"\tje\t"<<cond_ptr->label.false_label<<endl<<endl;
+        stmt_ptr->gen_rec_code(asmo,stmt_ptr);
+        asmo<<"\tjmp\t"<<tt->label.begin_label<<endl;
+    }
+    else if(t->stype == STMT_FOR){
+        
     }
     // if (t->kind_kind == COMP_STMT)
     // {
@@ -1521,16 +1551,18 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
-                    asmo<<"\tidivl\t_lc"<<ptr_param2->intervar_num<<endl;
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %ecx"<<endl;
                 }
                 else cerr<<"error in gen op_div code"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_CONST){
-                asmo<<"\tidivl\t$"<<ptr_param2->int_val<<endl;
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %ecx"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_VAR){
-                asmo<<"\tidivl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<endl;
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %ecx"<<endl;
             }
+
+            asmo<<"\tidivl\t%ecx"<<endl;
 
             if(this->optype == OP_DIV)
                 asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1709,6 +1741,104 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl<<endl;
             break;
         }
+        case OP_PLUSEQ:
+        case OP_MINUSEQ:{
+            // lval expr node ptr
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_lvalparam = ptr_param1->findChild(1);
+            // lval_expr '=' lor_expr, gen lor_expr code recursively
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
+
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_plus/minuseq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+            if(this->optype == OP_PLUSEQ)
+                asmo<<"\taddl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+            else if(this->optype == OP_MINUSEQ)
+                asmo<<"\tsubl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+
+            asmo<<endl;
+            break;
+        }
+        case OP_DIVEQ:
+        case OP_MODEQ:{
+            // lval expr node ptr
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_lvalparam = ptr_param1->findChild(1);
+            // lval_expr '=' lor_expr, gen lor_expr code recursively
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
+
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_div/modeq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+            asmo<<"\tidivl\t"<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+
+            if(this->optype == OP_DIVEQ)
+                asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+            else if(this->optype == OP_MODEQ)
+                asmo<<"\tmovl\t%edx, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+
+            asmo<<endl;
+            break;
+        }
+        case OP_MULEQ:{
+            // lval expr node ptr
+            TreeNode* ptr_param1 = this->findChild(1);
+            TreeNode* ptr_lvalparam = ptr_param1->findChild(1);
+            // lval_expr '=' lor_expr, gen lor_expr code recursively
+            TreeNode* ptr_param2 = this->findChild(2);
+            if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
+
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+            asmo<<"\txorl\t%edx, %edx"<<endl;
+
+            if(ptr_param2 -> nodeType == NODE_EXPR){
+                if(ptr_param2->intervar_num != -1){
+                    asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                }
+                else cerr<<"error in gen op_muleq code"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_param2->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_param2 -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
+            }
+
+            asmo<<"\tmovl\t"<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<", %edx"<<endl;
+            asmo<<"\timull\t%edx, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
+            asmo<<endl;
+            break;
+        }
     }
 }
 
@@ -1802,7 +1932,7 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
 
                 if(itemdata_ptr -> nodeType == NODE_VAR){
                     string ret_str = itemdata_ptr->lookup_locglosymtab(itemdata_ptr);
-                    if(ret_str.substr(ret_str.length()-6,6) == "(%ebp)"){
+                    if(ret_str.length()>=6 && ret_str.substr(ret_str.length()-6,6) == "(%ebp)"){
                         asmo<<"\tleal\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
                     }
                     else{
