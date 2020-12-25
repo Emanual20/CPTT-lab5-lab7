@@ -1093,13 +1093,25 @@ void TreeNode::gen_intervar(TreeNode* t){
             }
         }
     }
-    else if(this->nodeType == NODE_ITEM){
-        if(this->itype == ITEM_DECL){
-            if(this->optype == OP_EQ){
-                if(this->findChild(2)->nodeType == NODE_EXPR)
+    else if(ptr->nodeType == NODE_ITEM){
+        if(ptr->itype == ITEM_DECL){
+            if(ptr->optype == OP_EQ){
+                if(ptr->findChild(2)->nodeType == NODE_EXPR)
                     TreeNode::localvar_cnt -= 1;
             }
         }
+    }
+    else if(this->nodeType == NODE_ARRAY){
+        // generate interval register for array
+        TreeNode* ptr_item = this->findChild(2);
+        while(ptr_item){
+            if(this->findChild(1)->nodeType == NODE_EXPR)
+                TreeNode::localvar_cnt -= 1;
+            ptr_item = ptr_item -> sibling;
+        }
+        ptr->intervar_num = TreeNode::localvar_cnt;
+        TreeNode::localvar_cnt += 1;
+        TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
     }
 
     if(this->sibling!=nullptr) this->sibling->gen_intervar(t);
@@ -1446,6 +1458,9 @@ void TreeNode::gen_rec_code(ostream &asmo,TreeNode* t){
     else if(t->nodeType == NODE_FUNCALL){
         t->gen_funcall_code(asmo,t);
     }
+    else if(t->nodeType == NODE_ARRAY){
+        t->gen_array_code(asmo,t);
+    }
 }
 
 void TreeNode::gen_localdec_code(ostream &asmo){
@@ -1530,7 +1545,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
         else if(cond_ptr -> nodeType == NODE_ARRAY){
-            asmo<<"\tmovl\t"<<cond_ptr->gen_array_offset_code()<<", %eax"<<endl;
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1558,7 +1573,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
         else if(cond_ptr -> nodeType == NODE_ARRAY){
-            asmo<<"\tmovl\t"<<cond_ptr->gen_array_offset_code()<<", %eax"<<endl;
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1597,7 +1612,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
         else if(cond_ptr -> nodeType == NODE_ARRAY){
-            asmo<<"\tmovl\t"<<cond_ptr->gen_array_offset_code()<<", %eax"<<endl;
+            asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1628,7 +1643,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<"\tmovl\t"<<ptr_expr2->lookup_locglosymtab(ptr_expr2)<<", %eax"<<endl;
         }
         else if(ptr_expr2 -> nodeType == NODE_ARRAY){
-            asmo<<"\tmovl\t"<<ptr_expr2->gen_array_offset_code()<<", %eax"<<endl;
+            asmo<<"\tmovl\t_lc"<<ptr_expr2->intervar_num<<", %eax"<<endl;
         }
 
         asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -1644,24 +1659,6 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         if(t->label.begin_label!="")
             asmo<<t->label.begin_label<<":"<<endl;
     }
-    // if (t->kind_kind == COMP_STMT)
-    // {
-    //     for (int i = 0; t->children[i]; i++)
-    //     {
-    //         recursive_gen_code(out, t->children[i]);
-    //         for (Node *p = t->children[i]->sibling; p; p = p->sibling)
-    //             recursive_gen_code(out, p);
-    //     }
-    // }
-    // else if (t->kind_kind == WHILE_STMT)
-    // {
-    //     if (t->label.begin_label != "")
-    //         out << t->label.begin_label << ":" << endl;
-    //     recursive_gen_code(out, t->children[0]);
-    //     recursive_gen_code(out, t->children[1]);
-    //     out << "\tjmp " << t->label.begin_label << endl;
-    // }
-    // /* ... */
 }
 
 void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
@@ -1692,7 +1689,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1708,7 +1705,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\taddl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1736,7 +1733,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1752,7 +1749,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tsubl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tsubl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1781,7 +1778,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tcltd"<<endl;
@@ -1799,7 +1796,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %ecx"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tidivl\t%ecx"<<endl;
@@ -1834,7 +1831,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1850,7 +1847,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %edx"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
 
@@ -1878,7 +1875,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
 
@@ -1923,7 +1920,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param1->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
@@ -1939,7 +1936,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tcmpl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             if(this->optype == OP_EEQ)
@@ -1983,7 +1980,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
@@ -1991,7 +1988,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->gen_array_offset_code()<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl<<endl;
             break;
@@ -2020,7 +2018,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
@@ -2033,7 +2031,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<ptr_lvalparam->gen_array_offset_code()<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
 
             asmo<<endl;
@@ -2063,7 +2062,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             // asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
@@ -2072,18 +2071,21 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<ptr_lvalparam->gen_array_offset_code()<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
 
             if(this->optype == OP_DIVEQ)
                 asmo<<"\tmovl\t%eax, ";
             else if(this->optype == OP_MODEQ)
                 asmo<<"\tmovl\t%edx, ";
+
             if(ptr_lvalparam->nodeType == NODE_VAR){
                 asmo<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<ptr_lvalparam->gen_array_offset_code()<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
 
             asmo<<endl;
@@ -2113,14 +2115,15 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             if(ptr_lvalparam->nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<", %edx"<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_lvalparam->gen_array_offset_code()<<", %edx"<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
 
             asmo<<"\timull\t%edx, %eax"<<endl;
@@ -2129,7 +2132,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->lookup_locglosymtab(ptr_lvalparam)<<endl;
             }
             else if(ptr_lvalparam->nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t%eax, "<<ptr_lvalparam->gen_array_offset_code()<<endl;
+                // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
+                ptr_lvalparam->gen_array_store_code(asmo,ptr_lvalparam);
             }
 
             asmo<<endl;
@@ -2153,7 +2157,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -2175,7 +2179,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -2211,7 +2215,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tcmpl\t$0, %eax"<<endl;
@@ -2233,7 +2237,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t"<<ptr_param2->gen_array_offset_code()<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
 
@@ -2283,7 +2287,7 @@ void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
     }
 }
 
-void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
+void TreeNode::gen_funcall_code(ostream &asmo,TreeNode* t){
     // TODO: must finish in level 2, at this stage printf only
     if(this->nodeType != NODE_FUNCALL){
         return;
@@ -2326,7 +2330,8 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
                     asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
                 }
                 else if(itemdata_ptr -> nodeType == NODE_ARRAY){
-                    asmo<<"\tmovl\t"<<itemdata_ptr->gen_array_offset_code()<<", %eax"<<endl;
+                    itemdata_ptr -> gen_rec_code(asmo,itemdata_ptr);
+                    asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
                 }
                 asmo<<"\tpushl\t%eax"<<endl;
 
@@ -2370,13 +2375,15 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode *t){
                     }
                 }
                 else if(itemdata_ptr -> nodeType == NODE_ARRAY){
-                    string ret_str = itemdata_ptr->gen_array_offset_code();
-                    if(ret_str.length()>=6 && ret_str.substr(ret_str.length()-6,6) == "(%ebp)"){
-                        asmo<<"\tleal\t"<<ret_str<<", %eax"<<endl;
-                    }
-                    else{
-                        asmo<<"\tmovl\t$"<<ret_str<<", %eax"<<endl;
-                    }
+                    //youwenti
+                    // string ret_str = itemdata_ptr->gen_array_offset_code();
+                    // if(ret_str.length()>=6 && ret_str.substr(ret_str.length()-6,6) == "(%ebp)"){
+                    //     asmo<<"\tleal\t"<<ret_str<<", %eax"<<endl;
+                    // }
+                    // else{
+                    //     asmo<<"\tmovl\t$"<<ret_str<<", %eax"<<endl;
+                    // }
+                    cerr<<"didn't support yet"<<endl;
                 }
 
                 asmo<<"\tpushl\t%eax"<<endl;
@@ -2400,6 +2407,167 @@ void TreeNode::gen_prog_code(ostream &asmo,TreeNode* t){
         }
         progitem_ptr = progitem_ptr -> sibling;
     }
+}
+
+void TreeNode::gen_array_code(ostream &asmo,TreeNode* t){
+    if(this->nodeType!=NODE_ARRAY) return;
+    TreeNode* ptr_useid = this->findChild(1);// ptr to this id
+    TreeNode* temp = ptr_useid;
+    bool Is_Global = 0;
+    while(temp){
+        if(temp->IsSymbolTableOn() 
+            && temp->Is_InSymbolTable(ptr_useid->lineno,ptr_useid->var_name)){
+            if(temp->nodeType == NODE_PROG){
+                Is_Global = 1;
+            }
+            break;
+        }
+        temp = temp -> fath;
+    }
+    TreeNode* ptr_usenode = this;
+    TreeNode* ptr_fdecnode = temp->SymTable[ptr_useid->var_name].fDecNode;
+
+    // clear register eax for interval, ecx for offset counter
+    asmo<<"\txorl\t%eax, %eax"<<endl;
+    asmo<<"\txorl\t%ecx, %ecx"<<endl;
+
+    TreeNode* iterator_useitem = ptr_usenode->findChild(2);
+    TreeNode* iterator_fdecitem = ptr_fdecnode->findChild(2);
+    while(iterator_useitem){
+        asmo<<"# calc array offset"<<endl;
+        asmo<<"\tmovl\t%ecx, %eax"<<endl;
+        asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
+        asmo<<"\timull\t%edx, %eax"<<endl;
+        asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        
+        // generate code for expr(if exist)
+        TreeNode* ptr_param1 = iterator_useitem->findChild(1);
+        if(ptr_param1 -> nodeType == NODE_EXPR){
+            if(ptr_param1->intervar_num != -1){
+                ptr_param1->gen_rec_code(asmo,ptr_param1);
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+            }
+            else cerr<<"error in gen array code"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            ptr_param1->gen_rec_code(asmo,ptr_param1);
+            asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+        }
+        asmo<<"\taddl\t%eax, %ecx"<<endl;
+
+        iterator_useitem = iterator_useitem -> sibling;
+        iterator_fdecitem = iterator_fdecitem -> sibling;
+    }
+    
+    // if var is in global or local, two conditions
+    if(Is_Global){
+        asmo<<"\tmovl\t_"<<ptr_useid->var_name<<"(,%ecx,4), %eax"<<endl;
+        asmo<<"\tmovl\t%eax, "<<"_lc"<<this->intervar_num<<endl;
+    }
+    else{
+        // mult offset * 4 to calc real offset (within INT_SIZE)
+        // calc local offset in asm
+        asmo<<"\tshll\t$2, %ecx"<<endl;
+        asmo<<"\taddl\t$4, %ecx"<<endl;
+        asmo<<"\taddl\t$"<<to_string(temp->SymTable[ptr_useid->var_name].local_offset)<<", %ecx"<<endl;
+        asmo<<"\tsubl\t$"<<to_string(temp->scope_offset)<<", %ecx"<<endl;
+
+        // just to translate movl %ecx(%ebp), _lc xx
+        asmo<<"\tmovl\t%ebp, %eax"<<endl;
+        asmo<<"\taddl\t%ecx, %eax"<<endl;
+        asmo<<"\tmovl\t(%eax), _lc"<<this->intervar_num<<endl;
+    }
+
+    asmo<<endl;
+}
+
+void TreeNode::gen_array_store_code(ostream &asmo,TreeNode* t){
+    // before call this function, you must store the number in %eax
+    if(this->nodeType!=NODE_ARRAY) return;
+    asmo<<"\tpushl\t%eax"<<endl;
+
+    TreeNode* ptr_useid = this->findChild(1);// ptr to this id
+    TreeNode* temp = ptr_useid;
+    bool Is_Global = 0;
+    while(temp){
+        // cerr<<temp->nodeID<<endl;
+        if(temp->IsSymbolTableOn() 
+            && temp->Is_InSymbolTable(ptr_useid->lineno,ptr_useid->var_name)){
+            if(temp->nodeType == NODE_PROG){
+                Is_Global = 1;
+            }
+            break;
+        }
+        temp = temp -> fath;
+    }
+    TreeNode* ptr_usenode = this;
+    TreeNode* ptr_fdecnode = temp->SymTable[ptr_useid->var_name].fDecNode;
+
+    // clear register eax for interval, ecx for offset counter
+    asmo<<"\txorl\t%eax, %eax"<<endl;
+    asmo<<"\txorl\t%ecx, %ecx"<<endl;
+
+    TreeNode* iterator_useitem = ptr_usenode->findChild(2);
+    TreeNode* iterator_fdecitem = ptr_fdecnode->findChild(2);
+    while(iterator_useitem){
+        asmo<<"# calc array offset"<<endl;
+        asmo<<"\tmovl\t%ecx, %eax"<<endl;
+        asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
+        asmo<<"\timull\t%edx, %eax"<<endl;
+        asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        
+        // generate code for expr(if exist)
+        TreeNode* ptr_param1 = iterator_useitem->findChild(1);
+        if(ptr_param1 -> nodeType == NODE_EXPR){
+            if(ptr_param1->intervar_num != -1){
+                ptr_param1->gen_rec_code(asmo,ptr_param1);
+                asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+            }
+            else cerr<<"error in gen array code"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_CONST){
+            asmo<<"\tmovl\t$"<<ptr_param1->int_val<<", %eax"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_VAR){
+            asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
+        }
+        else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            ptr_param1->gen_rec_code(asmo,ptr_param1);
+            asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
+        }
+        asmo<<"\taddl\t%eax, %ecx"<<endl;
+
+        iterator_useitem = iterator_useitem -> sibling;
+        iterator_fdecitem = iterator_fdecitem -> sibling;
+    }
+    
+    // popl from the stack, which is originated in %eax, which is the number it wanna store 
+    asmo<<"\tpopl\t%edx"<<endl;
+    // if var is in global or local, two conditions
+    if(Is_Global){
+        asmo<<"\tmovl\t%edx, _"<<ptr_useid->var_name<<"(,%ecx,4)"<<endl;
+    }
+    else{
+        // mult offset * 4 to calc real offset (within INT_SIZE)
+        // calc local offset in asm
+        asmo<<"\tshll\t$2, %ecx"<<endl;
+        asmo<<"\taddl\t$4, %ecx"<<endl;
+        asmo<<"\taddl\t$"<<to_string(temp->SymTable[ptr_useid->var_name].local_offset)<<", %ecx"<<endl;
+        asmo<<"\tsubl\t$"<<to_string(temp->scope_offset)<<", %ecx"<<endl;
+
+        // just to translate movl %ecx(%ebp), _lc xx
+        asmo<<"\tmovl\t%ebp, %eax"<<endl;
+        asmo<<"\taddl\t%ecx, %eax"<<endl;
+        asmo<<"\tmovl\t%edx, (%eax)"<<endl;
+    }
+
+    asmo<<endl;
 }
 
 string TreeNode::lookup_locglosymtab(TreeNode* t){
@@ -2426,62 +2594,62 @@ string TreeNode::lookup_locglosymtab(TreeNode* t){
     return ret;
 }
 
-string TreeNode::gen_array_offset_code(){
-    if(this->nodeType!=NODE_ARRAY) return "fxxk u";
-    vector<int> v;
-    v.clear();
-    TreeNode* ptr_temp = this->findChild(2);
-    while(ptr_temp){
-        v.push_back(ptr_temp->child->int_val);
-        ptr_temp = ptr_temp -> sibling;
-    }
-    string ret = this->child->lookup_locglosymtab(this,v);
-    return ret;
-}
+// string TreeNode::gen_lvalarray_offset_code(){
+//     if(this->nodeType!=NODE_ARRAY) return "fxxk u";
+//     vector<int> v;
+//     v.clear();
+//     TreeNode* ptr_temp = this->findChild(2);
+//     while(ptr_temp){
+//         v.push_back(ptr_temp->child->int_val);
+//         ptr_temp = ptr_temp -> sibling;
+//     }
+//     string ret = this->child->lookup_locglosymtab(this,v);
+//     return ret;
+// }
 
-string TreeNode::lookup_locglosymtab(TreeNode* t,vector<int> v){
-    TreeNode* ptr_temp = this;
-    string ret = "";
-    // TODO : how to find the var if it was not declare either in this scope or global
-    while(ptr_temp){
-        if(ptr_temp->IsSymbolTableOn()
-            && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
-            if(ptr_temp->nodeType == NODE_PROG){
-                int LinearOffset = ptr_temp->calc_array_linearoffset(v);
+// string TreeNode::lookup_locglosymtab(TreeNode* t,vector<int> v){
+//     TreeNode* ptr_temp = this;
+//     string ret = "";
+//     // TODO : how to find the var if it was not declare either in this scope or global
+//     while(ptr_temp){
+//         if(ptr_temp->IsSymbolTableOn()
+//             && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
+//             if(ptr_temp->nodeType == NODE_PROG){
+//                 int LinearOffset = ptr_temp->calc_array_linearoffset(v);
 
-                ret = "_" + this->var_name
-                          + "+" 
-                          + to_string(LinearOffset * INT_SIZE);
-            }
-            else{
-                // cerr<<this->nodeID<<" "<<this->scope_offset<<endl;
-                int LinearOffset = ptr_temp->calc_array_linearoffset(v);
+//                 ret = "_" + this->var_name
+//                           + "+" 
+//                           + to_string(LinearOffset * INT_SIZE);
+//             }
+//             else{
+//                 // cerr<<this->nodeID<<" "<<this->scope_offset<<endl;
+//                 int LinearOffset = ptr_temp->calc_array_linearoffset(v);
 
-                ret = to_string(- ptr_temp->scope_offset 
-                                + INT_SIZE 
-                                + ptr_temp->SymTable[this->var_name].local_offset
-                                + LinearOffset * INT_SIZE) 
-                    + "(%ebp)";
-            }
-            break;
-        }
-        ptr_temp = ptr_temp -> fath;
-    }
+//                 ret = to_string(- ptr_temp->scope_offset 
+//                                 + INT_SIZE 
+//                                 + ptr_temp->SymTable[this->var_name].local_offset
+//                                 + LinearOffset * INT_SIZE) 
+//                     + "(%ebp)";
+//             }
+//             break;
+//         }
+//         ptr_temp = ptr_temp -> fath;
+//     }
 
-    return ret;
-}
+//     return ret;
+// }
 
-int TreeNode::calc_array_linearoffset(vector<int> v){
-    // NOTE: MUSY BE SURE OF node t IS THE FIRST Declare NODE of this array!
-    TreeNode* item_ptr = this->findChild(2);
-    int ret = 1;
-    for(int i=0;i<v.size();i++){
-        ret*=item_ptr->findChild(1)->int_val;
-        ret+=v[i];
-        item_ptr = item_ptr -> sibling;
-    }
-    return ret;
-}
+// int TreeNode::calc_array_linearoffset(vector<int> v){
+//     // NOTE: MUSY BE SURE OF node t IS THE FIRST Declare NODE of this array!
+//     TreeNode* item_ptr = this->findChild(2);
+//     int ret = 1;
+//     for(int i=0;i<v.size();i++){
+//         ret*=item_ptr->findChild(1)->int_val;
+//         ret+=v[i];
+//         item_ptr = item_ptr -> sibling;
+//     }
+//     return ret;
+// }
 
 void TreeNode::gen_offset(TreeNode* rt){
     this->dist_scope_offset();

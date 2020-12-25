@@ -227,9 +227,12 @@ public:
 
 public:
     int array_dim = 0;
-    string gen_array_offset_code();
-    string lookup_locglosymtab(TreeNode* t,vector<int> v);
-    int calc_array_linearoffset(vector<int> v);
+    void gen_array_code(ostream &asmo,TreeNode* t);
+    // before call this function, you must store the number in %eax
+    void gen_array_store_code(ostream &asmo,TreeNode* t);
+    // string gen_lvalarray_offset_code();
+    // string lookup_locglosymtab(TreeNode* t,vector<int> v);
+    // int calc_array_linearoffset(vector<int> v);
 };
 
 #endif
