@@ -412,12 +412,14 @@ Arraydeclval
     TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
     node->addChild($3);
     $$->addChild(node);
+    $$->array_dim = 1;
 }
 | Arraydeclval LOP_LBRKET INTEGER LOP_RBRKET{
     $$ = $1;
     TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
     node->addChild($3);
     $$->addChild(node);
+    $$->array_dim = $$->array_dim + 1;
 }
 ;
 
@@ -428,12 +430,14 @@ Arrayuseval
     TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
     node->addChild($3);
     $$->addChild(node);
+    $$->array_dim = 1;
 }
 | Arrayuseval LOP_LBRKET AddExp LOP_RBRKET{
     $$ = $1;
     TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
     node->addChild($3);
     $$->addChild(node);
+    $$->array_dim = $$->array_dim + 1;
 }
 ;
 
@@ -483,6 +487,7 @@ LValExp
     $$ -> addChild($1); $$ -> addChild($3);
 }
 | LValExp LOP_LBRKET AddExp LOP_RBRKET{
+    // TODO: there maybe bugs of array
     TreeNode* node = new TreeNode($1->lineno,NODE_ITEM);
     node->itype = ITEM_ARRAY;
     node->addChild($3);

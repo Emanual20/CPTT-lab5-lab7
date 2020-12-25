@@ -99,7 +99,6 @@ void TreeNode::printNodeInfo() {
 
     if(this->IsSymbolTableOn()) this->printSymbolTable();
 
-    // cout<<" ["<<this->local_var_size<<" "<<thisscope_var_space<<" "<<scope_offset<<"]";
     cout<<endl<<"[";
     if(this->label.begin_label!="")
         cout<<"BL:"<<this->label.begin_label<<" ";
@@ -110,6 +109,12 @@ void TreeNode::printNodeInfo() {
     if(this->label.false_label!="")
         cout<<"FL:"<<this->label.false_label<<" ";
     cout<<"]";
+
+    cout<<"  isdec = "<<this->is_dec;
+
+    cout<<" [LocVAR_SZ: "<<this->local_var_size<<" "
+        <<" ThisScope_Space: "<<this->thisscope_var_space<<" "
+        <<" Scope_OFFSET: "<<this->scope_offset<<"]";
 
     cout<<endl;
 }
@@ -148,7 +153,7 @@ void TreeNode::genSymbolTable(){
         this->OpenSymbolTable();
     }
 
-    if(this->nodeType==NODE_VAR&&this->is_dec){
+    if(this->nodeType==NODE_VAR && this->is_dec){
         bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != TreeNode::ptr_nst->SymTable.end();
         varItem items;
         // cout<<this->var_name<<" "<<is_exist<<" ";
@@ -163,6 +168,23 @@ void TreeNode::genSymbolTable(){
         //items.type has not been recorded;
         // cout<<items.dec_cnt<<endl;
         TreeNode::ptr_nst->SymTable[this->var_name]=items;
+    }
+    else if(this->nodeType == NODE_ARRAY && this->is_dec){
+        bool is_exist = TreeNode::ptr_nst->SymTable.find(this->child->var_name) 
+                        != TreeNode::ptr_nst->SymTable.end();
+        varItem items;
+
+        if(!is_exist){
+            // has to pull type from item_node
+            this->type = this->fath->type;
+            items.fDecNode = this;
+            items.dec_cnt = 1;
+        }
+        else{
+            items = TreeNode::ptr_nst->SymTable[this->child->var_name];
+            items.dec_cnt++;
+        }
+        TreeNode::ptr_nst->SymTable[this->child->var_name]=items;
     }
 
     if(this->child!=nullptr) this->child->genSymbolTable();
@@ -353,7 +375,35 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
                     <<" is undefined.."<<endl;
                 return false;
             }
+        }
+    }
+    else if(this->nodeType == NODE_ARRAY){
+        if(this->is_dec){
+            if(this->Is_Dupdefined(this->child->var_name,root_ptr)){
+                cerr<<"the array "<<this->child->var_name
+                    <<" in line:"<<this->lineno
+                    <<" is dup_defined.."<<endl;
+                return false;
+            }
 
+            // // add type record to first declare node
+            // TreeNode* tmp_ptr = this;
+            // while (tmp_ptr){
+            //     if((tmp_ptr->nodeType == NODE_STMT &&
+            //     (tmp_ptr->stype == STMT_CONSTDECL || tmp_ptr->stype == STMT_VARDECL))){
+            //         this->type = tmp_ptr->type;
+            //         break;
+            //     }
+            //     tmp_ptr = tmp_ptr -> fath;
+            // }
+        }
+        else{
+            if(!this->Is_Defined(this->child->var_name,root_ptr)){
+                cerr<<"the array "<<this->child->var_name
+                    <<" in line:"<<this->lineno
+                    <<" is undefined.."<<endl;
+                return false;
+            }
         }
     }
     // recursive type check
@@ -369,7 +419,8 @@ bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
         if(!this->is_dec){
             TreeNode* now_ptr = this;
             while(now_ptr){
-                if(now_ptr->IsSymbolTableOn()&&now_ptr->Is_InSymbolTable(this->lineno,this->var_name)){
+                if(now_ptr->IsSymbolTableOn() && 
+                    now_ptr->Is_InSymbolTable(this->lineno,this->var_name)){
                     this->type = now_ptr->SymTable[this->var_name].fDecNode->type;
                     break;
                 }
@@ -378,7 +429,24 @@ bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
             }
         }
     }
+    else if(this->nodeType==NODE_ARRAY){
+        // nodes which use vars pull type from symboltable
+        // NOTE: fdecnode's type was recorded in genSymbolTable, now just pull it down in NODE_ARRAY
+        if(!this->is_dec){
+            TreeNode* now_ptr = this;
+            while(now_ptr){
+                if(now_ptr->IsSymbolTableOn() && 
+                    now_ptr->Is_InSymbolTable(this->lineno,this->child->var_name)){
+                    this->type = now_ptr->SymTable[this->child->var_name].fDecNode->type;
+                    break;
+                }
+                if(now_ptr==ptr) break;
+                now_ptr = now_ptr -> fath;
+            }
+        }
+    }
 
+    // NOTE: maybe cause some problem cuz the income of array
     if(this->nodeType == NODE_EXPR && this->stype == STMT_EXP){
         if(this->optype == OP_LVAL){
             this->type = this->child->type;
@@ -942,13 +1010,13 @@ string TreeNode::new_constring_name(){
     return ret;
 }
 
-void TreeNode::gen_constring_decl(ostream &asmo, TreeNode* t){
-    if(this->child!=nullptr) this->child->gen_constring_decl(asmo,this->child);
-    this->asmo_constring(asmo,this);
-    if(this->sibling!=nullptr) this->sibling->gen_constring_decl(asmo,this->sibling);
+void TreeNode::gen_constring_decl(ostream &asmo){
+    if(this->child!=nullptr) this->child->gen_constring_decl(asmo);
+    this->asmo_constring(asmo);
+    if(this->sibling!=nullptr) this->sibling->gen_constring_decl(asmo);
 }
 
-void TreeNode::asmo_constring(ostream &asmo, TreeNode* t){
+void TreeNode::asmo_constring(ostream &asmo){
     if(this->nodeType == NODE_CONST && *(this->type) == *TYPE_STRING){
         this->var_name = this->new_constring_name();
         asmo<<this->var_name<<":"<<endl;
@@ -1268,7 +1336,7 @@ void TreeNode::gen_expr_label(TreeNode* t){
 }
 
 void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
-    if(this == root_ptr) this->gen_asm_header(asmo,root_ptr);
+    if(this == root_ptr) this->gen_asm_header(asmo);
 
     TreeNode* child_ptr = root_ptr->child;
     asmo<<"\t.bss"<<endl;
@@ -1289,7 +1357,7 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     // recursive generate constring
     asmo<<"# my const string here"<<endl;
     asmo<<"\t.section\t.rodata"<<endl;
-    this->gen_constring_decl(asmo,this);
+    this->gen_constring_decl(asmo);
 
     asmo<<endl<<endl<<"# my asm code here"<<endl;
     asmo<<"\t.text"<<endl<<"\t.globl main"<<endl;
@@ -1301,7 +1369,7 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     }
 }
 
-void TreeNode::gen_asm_header(ostream &asmo,TreeNode* t){
+void TreeNode::gen_asm_header(ostream &asmo){
     asmo<<"# my asm code header here"<<endl;
 }
 
@@ -2228,28 +2296,81 @@ void TreeNode::calc_local_offset(TreeNode* rt){
 
     int tmp_cnt = 0;
     for(map<string,varItem>::iterator it = this->SymTable.begin();it!=SymTable.end();it++){
+        // it->second.local_offset = tmp_cnt * INT_SIZE;
+        // tmp_cnt += 1;
+        // add local offset to now item in symboltable
         it->second.local_offset = tmp_cnt * INT_SIZE;
-        tmp_cnt += 1;
+
+        // calc the next local offset now item by judge last item's fDecNode's NODETYPE
+        TreeNode* fdec_ptr = it->second.fDecNode;
+        if(fdec_ptr->nodeType == NODE_VAR){
+            tmp_cnt += 1;
+        }
+        else if(fdec_ptr->nodeType == NODE_ARRAY){
+            int this_size = 1;
+            TreeNode* fdecitem_ptr = fdec_ptr -> findChild(2);
+            while(fdecitem_ptr){
+                this_size *= fdecitem_ptr -> findChild(1) -> int_val;
+                fdecitem_ptr = fdecitem_ptr -> sibling;
+            }
+            tmp_cnt += this_size;
+        }
     }
 }
 
 void TreeNode::calc_local_var_size(){
     if(this->IsSymbolTableOn()){
-        this->local_var_size += this->SymTable.size();
+        // this->local_var_size += this->SymTable.size();
+        // LEVEL2: change to calc array size
+        int tot_var_size = 0;
+        for(map<string,varItem>::iterator it = this->SymTable.begin(); it!=this->SymTable.end(); it++){
+            TreeNode* fdec_ptr = it->second.fDecNode;
+            if(fdec_ptr->nodeType == NODE_VAR){
+                tot_var_size += 1;
+            }
+            else if(fdec_ptr->nodeType == NODE_ARRAY){
+                int this_size = 1;
+                TreeNode* fdecitem_ptr = fdec_ptr -> findChild(2);
+                while(fdecitem_ptr){
+                    this_size *= fdecitem_ptr -> findChild(1) -> int_val;
+                    fdecitem_ptr = fdecitem_ptr -> sibling;
+                }
+                tot_var_size += this_size;
+            }
+        }
+        this->local_var_size += tot_var_size;
     }
     if(this->nodeType != NODE_PROG && this->nodeType != NODE_FUNC){
         this->fath->local_var_size = 
-        max(ceil(this->fath->local_var_size * 1.0 / 4) * 4,
-            ceil(this->local_var_size * 1.0 / 4) * 4);
+        max(ceil(this->fath->local_var_size * 1.0 / INT_SIZE) * INT_SIZE,
+            ceil(this->local_var_size * 1.0 / INT_SIZE) * INT_SIZE);
     }
 }
 
 void TreeNode::calc_thisscope_var_space(){
     if(this->IsNeedSwitchScope() && this->IsSymbolTableOn()){
-        int var_num = this->SymTable.size();
-        // calc the local space need to allocate
-        // TODO: can expand by struct or function or something
-        this->thisscope_var_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
+        // int var_num = this->SymTable.size();
+        // // calc the local space need to allocate
+        // // TODO: can expand by struct or function or something
+        // this->thisscope_var_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
+        // LEVEL2: change to calc array size
+        int tot_space = 0;
+        for(map<string,varItem>::iterator it = this->SymTable.begin(); it!=this->SymTable.end(); it++){
+            TreeNode* fdec_ptr = it->second.fDecNode;
+            if(fdec_ptr->nodeType == NODE_VAR){
+                tot_space += INT_SIZE;
+            }
+            else if(fdec_ptr->nodeType == NODE_ARRAY){
+                int this_space = 1;
+                TreeNode* fdecitem_ptr = fdec_ptr -> findChild(2);
+                while(fdecitem_ptr){
+                    this_space *= fdecitem_ptr -> findChild(1) -> int_val;
+                    fdecitem_ptr = fdecitem_ptr -> sibling;
+                }
+                tot_space += this_space * INT_SIZE;
+            }
+        }
+        this->thisscope_var_space = ceil((tot_space + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
     }
 }
 

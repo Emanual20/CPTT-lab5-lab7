@@ -174,8 +174,8 @@ public:
 public:
     static int conststring_cnt;
     string new_constring_name();
-    void gen_constring_decl(ostream &out, TreeNode* t);
-    void asmo_constring(ostream &out, TreeNode* t);
+    void gen_constring_decl(ostream &out);
+    void asmo_constring(ostream &out);
 
 public:
     // gen_label
@@ -212,7 +212,7 @@ public:
 public:
     // gen_code
     void gen_code(ostream &out,TreeNode* t);
-    void gen_asm_header(ostream &out,TreeNode* t);
+    void gen_asm_header(ostream &out);
     void gen_glob_decl(ostream &out,TreeNode* t);
     void gen_intervardecl_code(ostream &out, TreeNode* t);
     void gen_rec_code(ostream &out,TreeNode* t);
@@ -224,6 +224,9 @@ public:
     void gen_localdec_code(ostream &out);
     void recover_localdec_stack(ostream &out);
     string lookup_locglosymtab(TreeNode* t);
+
+public:
+    int array_dim = 0;
 };
 
 #endif
