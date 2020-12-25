@@ -285,6 +285,12 @@ void TreeNode::printSpecialInfo() {
             cout<<" func_name: "<<this->var_name;
             break;
         }
+        case NODE_ARRAY:{
+            cout<<"children:[";
+            this->printChildrenId();
+            cout<<"] ";
+            break;
+        }
         default:
             break;
     }
@@ -873,6 +879,7 @@ string TreeNode::nodeType2String (NodeType type){
         case NODE_STMT:    return "NODE_STMT";
         case NODE_PROG:    return "NODE_PROG";
         case NODE_AUTH:    return "NODE_AUTH";
+        case NODE_ARRAY:   return "NODE_ARRAY";
 
         case NODE_ASSIST:  return "NODE_ROOT-1";
     }

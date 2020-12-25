@@ -139,6 +139,13 @@ declareitem
     node->addChild($1);
     $$ = node;
 }
+| Arraydeclval{
+    TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
+    node->itype = ITEM_DECL;
+    $1->is_dec=true;
+    node->addChild($1);
+    $$ = node;
+}
 ;
 
 assignstmt
@@ -398,6 +405,38 @@ expr
 : LorExp{$$=$1;}
 ;
 
+Arraydeclval
+: IDENTIFIER LOP_LBRKET INTEGER LOP_RBRKET{
+    $$ = new TreeNode($1->lineno,NODE_ARRAY);
+    $$->addChild($1);
+    TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
+    node->addChild($3);
+    $$->addChild(node);
+}
+| Arraydeclval LOP_LBRKET INTEGER LOP_RBRKET{
+    $$ = $1;
+    TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
+    node->addChild($3);
+    $$->addChild(node);
+}
+;
+
+Arrayuseval
+: IDENTIFIER LOP_LBRKET AddExp LOP_RBRKET{
+    $$ = new TreeNode($1->lineno,NODE_ARRAY);
+    $$->addChild($1);
+    TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
+    node->addChild($3);
+    $$->addChild(node);
+}
+| Arrayuseval LOP_LBRKET AddExp LOP_RBRKET{
+    $$ = $1;
+    TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
+    node->addChild($3);
+    $$->addChild(node);
+}
+;
+
 // note: here PrimaryExp has different nodetype
 PrimaryExp
 : IDENTIFIER {
@@ -409,6 +448,9 @@ PrimaryExp
     $$ -> optype = OP_POINT;
     $$ -> addChild($1); $$ -> addChild($3);
     // TODO: miss struct's type expr
+}
+| Arrayuseval{
+    $$ = $1;
 }
 | INTEGER {
     $$ = $1;
@@ -439,6 +481,13 @@ LValExp
     $$ -> stype = STMT_EXP;
     $$ -> optype = OP_POINT;
     $$ -> addChild($1); $$ -> addChild($3);
+}
+| LValExp LOP_LBRKET AddExp LOP_RBRKET{
+    TreeNode* node = new TreeNode($1->lineno,NODE_ITEM);
+    node->itype = ITEM_ARRAY;
+    node->addChild($3);
+    $$ = $1;
+    $$->addChild(node);
 }
 ;
 

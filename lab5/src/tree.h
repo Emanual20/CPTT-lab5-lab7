@@ -21,6 +21,7 @@ enum NodeType
     NODE_STMT,
     NODE_PROG,
     NODE_ASSIST, // assist to occupy a position
+    NODE_ARRAY,
 };
 
 enum StmtType {
@@ -78,6 +79,7 @@ enum ItemType{
     ITEM_DECL,
     ITEM_SPF, // scanf or printf
     ITEM_UFUNC,
+    ITEM_ARRAY,// param of array
 };
 
 struct Label{
