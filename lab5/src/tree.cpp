@@ -1277,6 +1277,9 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             // NOTE: after run stmt_code, must run expr3 codes
             ptr_expr3->label.next_label = ptr_expr2->label.begin_label;
 
+            // NOTE: very important
+            ptr_expr3->label.begin_label = ptr_stmt->label.next_label = new_label();
+
             // deliver next label(maybe new in this node)
             if(t->sibling!=nullptr){
                 t->sibling->label.begin_label = t->label.next_label;
@@ -1295,7 +1298,7 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             }
 
             TreeNode* ptr_rightmostchild = t->findrightmostchild();
-            if(ptr_rightmostchild->label.next_label!="" && ptr_rightmostchild!=nullptr){
+            if(t->label.next_label!="" && ptr_rightmostchild!=nullptr){
                 ptr_rightmostchild->label.next_label = t->label.next_label;
             }
 
