@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
         
         root->printAST();
         
-        //root->gen_code(asmfo,root);
+        root->gen_code(asmfo,root);
     }
     return 0;
 }

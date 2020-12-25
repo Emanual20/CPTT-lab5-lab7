@@ -227,6 +227,9 @@ public:
 
 public:
     int array_dim = 0;
+    string gen_array_offset_code();
+    string lookup_locglosymtab(TreeNode* t,vector<int> v);
+    int calc_array_linearoffset(vector<int> v);
 };
 
 #endif

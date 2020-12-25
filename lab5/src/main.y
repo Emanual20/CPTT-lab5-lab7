@@ -486,13 +486,20 @@ LValExp
     $$ -> optype = OP_POINT;
     $$ -> addChild($1); $$ -> addChild($3);
 }
-| LValExp LOP_LBRKET AddExp LOP_RBRKET{
-    // TODO: there maybe bugs of array
-    TreeNode* node = new TreeNode($1->lineno,NODE_ITEM);
-    node->itype = ITEM_ARRAY;
-    node->addChild($3);
-    $$ = $1;
-    $$->addChild(node);
+// | LValExp LOP_LBRKET AddExp LOP_RBRKET{
+//     // TODO: there maybe bugs of array
+//     TreeNode* node = new TreeNode($1->lineno,NODE_ITEM);
+//     node->itype = ITEM_ARRAY;
+//     node->addChild($3);
+//     $$ = $1;
+//     $$->addChild(node);
+// }
+| Arrayuseval{
+    TreeNode* node = new TreeNode($1->lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_LVAL;
+    node->addChild($1);
+    $$ = node;
 }
 ;
 

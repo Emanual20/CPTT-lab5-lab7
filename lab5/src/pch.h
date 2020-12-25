@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <list>
 #include <assert.h>
 
