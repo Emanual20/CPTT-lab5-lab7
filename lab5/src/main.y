@@ -170,25 +170,28 @@ assignstmt
 funcdef
 : T IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
     TreeNode* node = new TreeNode($1->lineno,NODE_FUNC);
-    node -> type = new Type(COMPOSE_FUNCTION); 
+    // TODO : may cause some problem
+    //node -> type = new Type(COMPOSE_FUNCTION); 
+    node -> type = TYPE_INT;
     node -> type -> retType = $1 -> type -> type; // retType
     node -> var_name = $2 -> var_name; // funcname
-    $2 -> is_dec = true;
     node -> addChild($2); // this line can be ignored further
     node -> addChild($4); // params
     node -> addChild($6);
     $$ = node;
+    $$ -> is_dec = true;
 }
 | TV IDENTIFIER LOP_LPAREN funcparams LOP_RPAREN block {
     TreeNode* node = new TreeNode($1->lineno,NODE_FUNC);
-    node -> type = new Type(COMPOSE_FUNCTION); 
+    //node -> type = new Type(COMPOSE_FUNCTION);
+    node -> type = TYPE_INT;
     node -> type -> retType = TYPE_VOID -> type; // retType
     node -> var_name = $2 -> var_name; // funcname
-    $2 -> is_dec = true;
     node -> addChild($2); // this line can be ignored further
     node -> addChild($4); // params
     node -> addChild($6);
     $$ = node;
+    $$ -> is_dec = true;
 }
 ;
 
@@ -311,6 +314,10 @@ otherparamlist
     
     $$ = $1;
     $$->addChild(expnode);
+}
+| {
+    TreeNode* node = new TreeNode(lineno, NODE_LIST);
+    $$ = node;
 }
 ;
 
@@ -499,6 +506,9 @@ PrimaryExp
 }
 | LOP_LPAREN LorExp LOP_RPAREN {
     $$ = $2;
+}
+| otherfuncstmt {
+    $$ = $1;
 }
 ;
 

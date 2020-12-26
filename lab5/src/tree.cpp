@@ -44,13 +44,13 @@ void TreeNode::addSibling(TreeNode* sibling){
 
 TreeNode* TreeNode::findChild(int offset){
     if(offset<=0){
-        cout<<"invalid offset param < 0.."<<endl;
+        //cerr<<"invalid offset param < 0.."<<endl;
         return nullptr;
     }
     TreeNode* tmp_ptr = this->child;
     for(int i=1;i<offset;i++){
         if(!(tmp_ptr->sibling)){
-            cerr<<"invalid offset param "<<offset<<" in findChild.."<<endl;
+            //cerr<<"invalid offset param "<<offset<<" in findChild.."<<endl;
             return nullptr;
         }
         tmp_ptr = tmp_ptr->sibling;
@@ -60,10 +60,14 @@ TreeNode* TreeNode::findChild(int offset){
 
 TreeNode* TreeNode::findrightmostchild(){
     TreeNode* ptr_temp = this->findChild(1);
+    if(!ptr_temp){
+        //cerr<<"this nodeID "<<this->nodeID<<" has no child"<<endl;
+        return nullptr;
+    }
+
     while(ptr_temp->sibling){
         ptr_temp = ptr_temp->sibling;
     }
-    if(!ptr_temp) cerr<<"this nodeID "<<this->nodeID<<" has no child"<<endl;
     return ptr_temp;
 }
 
@@ -145,6 +149,23 @@ void TreeNode::genSymbolTable(){
     }
     bool isSwitch = false;
 
+    if(this->nodeType == NODE_FUNC && this->is_dec){
+        bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != TreeNode::ptr_nst->SymTable.end();
+        varItem items;
+        // cout<<this->var_name<<" "<<is_exist<<" ";
+        if(!is_exist){
+            items.fDecNode = this;
+            items.dec_cnt = 1;
+        }
+        else{
+            items = TreeNode::ptr_nst->SymTable[this->var_name];
+            items.dec_cnt++;
+        }
+        //items.type has not been recorded;
+        // cout<<items.dec_cnt<<endl;
+        TreeNode::ptr_nst->SymTable[this->var_name]=items;
+    }
+
     // switch the scope and open this node's symboltable
     if(this->IsNeedSwitchScope()){
         TreeNode::ptr_nst = this;
@@ -153,7 +174,7 @@ void TreeNode::genSymbolTable(){
         this->OpenSymbolTable();
     }
 
-    if(this->nodeType==NODE_VAR && this->is_dec){
+    if(this->nodeType == NODE_VAR && this->is_dec){
         bool is_exist = TreeNode::ptr_nst->SymTable.find(this->var_name) != TreeNode::ptr_nst->SymTable.end();
         varItem items;
         // cout<<this->var_name<<" "<<is_exist<<" ";
@@ -188,13 +209,15 @@ void TreeNode::genSymbolTable(){
     }
 
     if(this->child!=nullptr) this->child->genSymbolTable();
-    if(this->sibling!=nullptr) this->sibling->genSymbolTable();
+
     // to traversal the parse tree further..
+
+    if(this->sibling!=nullptr) this->sibling->genSymbolTable();
 
     // check isSwitch to recover the scope if nec
     if(isSwitch){
-        TreeNode::ptr_nst = TreeNode::ptr_vec.top();
         TreeNode::ptr_vec.pop();
+        TreeNode::ptr_nst = TreeNode::ptr_vec.top();
     }
 }
 
@@ -432,6 +455,20 @@ bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
     else if(this->nodeType==NODE_ARRAY){
         // nodes which use vars pull type from symboltable
         // NOTE: fdecnode's type was recorded in genSymbolTable, now just pull it down in NODE_ARRAY
+        if(!this->is_dec){
+            TreeNode* now_ptr = this;
+            while(now_ptr){
+                if(now_ptr->IsSymbolTableOn() && 
+                    now_ptr->Is_InSymbolTable(this->lineno,this->child->var_name)){
+                    this->type = now_ptr->SymTable[this->child->var_name].fDecNode->type;
+                    break;
+                }
+                if(now_ptr==ptr) break;
+                now_ptr = now_ptr -> fath;
+            }
+        }
+    }
+    else if(this->nodeType==NODE_FUNCALL){
         if(!this->is_dec){
             TreeNode* now_ptr = this;
             while(now_ptr){
@@ -942,7 +979,7 @@ string TreeNode::nodeType2String (NodeType type){
         case NODE_ITEM:    return "NODE_ITEM";
         case NODE_LIST:    return "NODE_LIST";
         case NODE_FUNC:    return "NODE_FUNC";
-        case NODE_FUNCALL: return "NODE_FUNCCALL";
+        case NODE_FUNCALL: return "NODE_FUNCALL";
 
         case NODE_STMT:    return "NODE_STMT";
         case NODE_PROG:    return "NODE_PROG";
@@ -1096,16 +1133,18 @@ void TreeNode::gen_intervar(TreeNode* t){
     else if(ptr->nodeType == NODE_ITEM){
         if(ptr->itype == ITEM_DECL){
             if(ptr->optype == OP_EQ){
-                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                if(ptr->findChild(2)->nodeType == NODE_EXPR
+                    || ptr->findChild(2)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
             }
         }
     }
-    else if(this->nodeType == NODE_ARRAY){
+    else if(ptr->nodeType == NODE_ARRAY){
         // generate interval register for array
-        TreeNode* ptr_item = this->findChild(2);
+        TreeNode* ptr_item = ptr->findChild(2);
         while(ptr_item){
-            if(this->findChild(1)->nodeType == NODE_EXPR)
+            if(ptr->findChild(1)->nodeType == NODE_EXPR
+                || ptr->findChild(1)->nodeType == NODE_ARRAY)
                 TreeNode::localvar_cnt -= 1;
             ptr_item = ptr_item -> sibling;
         }
@@ -1113,8 +1152,31 @@ void TreeNode::gen_intervar(TreeNode* t){
         TreeNode::localvar_cnt += 1;
         TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
     }
+    else if(ptr->nodeType == NODE_FUNCALL){
+        TreeNode* ptr_item = ptr->findChild(2)->findChild(1);
+        while(ptr_item){
+            if(ptr_item->nodeType == NODE_ITEM 
+                && ptr_item->itype == ITEM_UFUNC){
+                if(ptr->findChild(1)->nodeType == NODE_EXPR
+                    || ptr->findChild(1)->nodeType == NODE_ARRAY){
+                    TreeNode::localvar_cnt -= 1;
+                }
+            }
+            ptr_item = ptr_item -> sibling;
+        }
+        if(ptr->var_name != "scanf" && ptr->var_name != "printf"){
+            ptr->intervar_num = TreeNode::localvar_cnt;
+            TreeNode::localvar_cnt += 1;
+            TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
+        }   
+    }
 
     if(this->sibling!=nullptr) this->sibling->gen_intervar(t);
+}
+
+bool TreeNode::is_have_intervar(){
+    return this->nodeType == NODE_ARRAY 
+        || this->nodeType == NODE_FUNCALL;
 }
 
 void TreeNode::gen_label(TreeNode* root_ptr){
@@ -1130,8 +1192,8 @@ void TreeNode::gen_label(TreeNode* root_ptr){
         TreeNode* aim_node = compunit_ptr;
         if(aim_node->nodeType == NODE_FUNC){
             // generate main label for int main()
-            if(aim_node->var_name == "main")
-                aim_node->label.begin_label = "main";
+            // if(aim_node->var_name == "main")
+            //     aim_node->label.begin_label = "main";
             // THIS IS A BLOCK NODE
             aim_node = aim_node->findChild(3);
             // while(aim_node){
@@ -1410,8 +1472,8 @@ void TreeNode::gen_code(ostream &asmo,TreeNode* root_ptr){
     this->gen_constring_decl(asmo);
 
     asmo<<endl<<endl<<"# my asm code here"<<endl;
-    asmo<<"\t.text"<<endl<<"\t.globl main"<<endl;
-    asmo<<"\t.type\tmain, @function"<<endl<<endl;
+    // asmo<<"\t.text"<<endl<<"\t.globl main"<<endl;
+    // asmo<<"\t.type\tmain, @function"<<endl<<endl;
     // recursive generate code
     this->gen_rec_code(asmo,root_ptr);
     if(root_ptr->label.next_label!=""){
@@ -1582,7 +1644,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         else if(cond_ptr -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
-        else if(cond_ptr -> nodeType == NODE_ARRAY){
+        else if(cond_ptr -> is_have_intervar()){
             asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
@@ -1610,7 +1672,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         else if(cond_ptr -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
-        else if(cond_ptr -> nodeType == NODE_ARRAY){
+        else if(cond_ptr -> is_have_intervar()){
             asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
@@ -1649,7 +1711,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         else if(cond_ptr -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<cond_ptr->lookup_locglosymtab(cond_ptr)<<", %eax"<<endl;
         }
-        else if(cond_ptr -> nodeType == NODE_ARRAY){
+        else if(cond_ptr -> is_have_intervar()){
             asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
         }
 
@@ -1680,7 +1742,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         else if(ptr_expr2 -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<ptr_expr2->lookup_locglosymtab(ptr_expr2)<<", %eax"<<endl;
         }
-        else if(ptr_expr2 -> nodeType == NODE_ARRAY){
+        else if(ptr_expr2 -> is_have_intervar()){
             asmo<<"\tmovl\t_lc"<<ptr_expr2->intervar_num<<", %eax"<<endl;
         }
 
@@ -1703,6 +1765,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<t->label.begin_label<<":"<<endl;
         // LEVEL3 func expand to return expr
         // maybe return void
+        asmo<<"# return.."<<endl;
         if(t->child){
             TreeNode* ptr_expr = t->child;
             if(ptr_expr -> nodeType == NODE_EXPR){
@@ -1715,7 +1778,7 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             else if(ptr_expr -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_expr->lookup_locglosymtab(ptr_expr)<<", %eax"<<endl;
             }
-            else if(ptr_expr -> nodeType == NODE_ARRAY){
+            else if(ptr_expr -> is_have_intervar()){
                 ptr_expr->gen_rec_code(asmo,ptr_expr);
                 asmo<<"\tmovl\t_lc"<<ptr_expr->intervar_num<<", %eax"<<endl;
             }
@@ -1758,9 +1821,10 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
+
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
@@ -1774,8 +1838,8 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\taddl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
-                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+            else if(ptr_param2 -> is_have_intervar()){
+                asmo<<"\taddl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
@@ -1802,7 +1866,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -1818,7 +1882,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tsubl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tsubl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -1847,7 +1911,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -1865,7 +1929,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %ecx"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -1900,7 +1964,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -1916,7 +1980,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %edx"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -1944,7 +2008,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -1989,7 +2053,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -2005,7 +2069,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tcmpl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2049,7 +2113,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2087,7 +2151,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2131,7 +2195,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2184,7 +2248,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2226,7 +2290,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -2248,7 +2312,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2284,7 +2348,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
             }
-            else if(ptr_param1 -> nodeType == NODE_ARRAY){
+            else if(ptr_param1 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
 
@@ -2306,7 +2370,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else if(ptr_param2 -> nodeType == NODE_VAR){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
-            else if(ptr_param2 -> nodeType == NODE_ARRAY){
+            else if(ptr_param2 -> is_have_intervar()){
                 asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
@@ -2340,6 +2404,10 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
 
 void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
     if(this->nodeType!=NODE_FUNC) return;
+
+    asmo<<"\t.text"<<endl<<"\t.globl "<<this->findChild(1)->var_name<<endl;
+    asmo<<"\t.type\t"<<this->findChild(1)->var_name<<", @function"<<endl<<endl;
+    asmo<<this->findChild(1)->var_name<<":"<<endl;
 
     // TODO: func shall push its param to stack
     if(this->label.begin_label!="")
@@ -2399,7 +2467,7 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode* t){
                 else if(itemdata_ptr -> nodeType == NODE_VAR){
                     asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
                 }
-                else if(itemdata_ptr -> nodeType == NODE_ARRAY){
+                else if(itemdata_ptr -> is_have_intervar()){
                     itemdata_ptr -> gen_rec_code(asmo,itemdata_ptr);
                     asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
                 }
@@ -2466,6 +2534,50 @@ void TreeNode::gen_funcall_code(ostream &asmo,TreeNode* t){
         asmo<<"\tcall\t__isoc99_scanf"<<endl;
         asmo<<"\taddl\t$"<< (calc + 1) * INT_SIZE << ", %esp" << endl << endl;
     }
+    else{
+        TreeNode* idnode_ptr = this->findChild(1);
+        TreeNode* funcalllist_ptr = this->findChild(2);
+
+        int calc = 0;
+
+        if(funcalllist_ptr){
+            TreeNode* funcallitem_ptr = funcalllist_ptr -> findrightmostchild();
+
+            // push params from the rightmost
+            while(funcallitem_ptr){
+                calc += 1;
+
+                TreeNode* itemdata_ptr = funcallitem_ptr -> findChild(1);
+
+                if(itemdata_ptr -> nodeType == NODE_EXPR){
+                    // NOTE: may cause some problem
+                    itemdata_ptr -> gen_rec_code(asmo, itemdata_ptr);
+                    if(itemdata_ptr->intervar_num != -1){
+                        asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
+                    }
+                    else cerr<<"error in gen printf code"<<endl;
+                }
+                else if(itemdata_ptr -> nodeType == NODE_CONST){
+                    asmo<<"\tmovl\t$"<<itemdata_ptr->int_val<<", %eax"<<endl;
+                }
+                else if(itemdata_ptr -> nodeType == NODE_VAR){
+                    asmo<<"\tmovl\t"<<itemdata_ptr->lookup_locglosymtab(itemdata_ptr)<<", %eax"<<endl;
+                }
+                else if(itemdata_ptr -> is_have_intervar()){
+                    itemdata_ptr -> gen_rec_code(asmo,itemdata_ptr);
+                    asmo<<"\tmovl\t_lc"<<itemdata_ptr->intervar_num<<", %eax"<<endl;
+                }
+                asmo<<"\tpushl\t%eax"<<endl;
+
+                funcallitem_ptr = funcallitem_ptr -> left_sibling;
+            }
+        }
+
+        asmo<<"\tcall\t"<<this->var_name<<endl;
+        asmo<<"\taddl\t$"<< calc * INT_SIZE << ", %esp" << endl;
+        asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
+        asmo<<endl;
+    }
 }
 
 void TreeNode::gen_prog_code(ostream &asmo,TreeNode* t){
@@ -2525,7 +2637,7 @@ void TreeNode::gen_array_code(ostream &asmo,TreeNode* t){
         else if(ptr_param1 -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
         }
-        else if(ptr_param1 -> nodeType == NODE_ARRAY){
+        else if(ptr_param1 -> is_have_intervar()){
             ptr_param1->gen_rec_code(asmo,ptr_param1);
             asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
         }
@@ -2607,7 +2719,7 @@ void TreeNode::gen_array_store_code(ostream &asmo,TreeNode* t){
         else if(ptr_param1 -> nodeType == NODE_VAR){
             asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab(ptr_param1)<<", %eax"<<endl;
         }
-        else if(ptr_param1 -> nodeType == NODE_ARRAY){
+        else if(ptr_param1 -> is_have_intervar()){
             ptr_param1->gen_rec_code(asmo,ptr_param1);
             asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
         }

@@ -183,16 +183,17 @@ public:
     static int max_localvar_cnt;
     static int label_cnt;
 
-    int intervar_num = -1;
-    void gen_intervar(TreeNode* t);
-
     struct Label label;
     void gen_label(TreeNode* root_ptr);
     string new_label();
     void gen_rec_stmtorexpr_label(TreeNode* t);
     void gen_stmt_label(TreeNode* t);
     void gen_expr_label(TreeNode* t);
-
+public:
+    // interval module
+    int intervar_num = -1;
+    void gen_intervar(TreeNode* t);
+    bool is_have_intervar();
 public:
     // manage local vars related params
     int local_var_size = 0;
@@ -226,6 +227,7 @@ public:
     string lookup_locglosymtab(TreeNode* t);
 
 public:
+    // array module
     int array_dim = 0;
     void gen_array_code(ostream &asmo,TreeNode* t);
     // before call this function, you must store the number in %eax
@@ -233,6 +235,9 @@ public:
     // string gen_lvalarray_offset_code();
     // string lookup_locglosymtab(TreeNode* t,vector<int> v);
     // int calc_array_linearoffset(vector<int> v);
+
+public:
+    // function module
 };
 
 #endif
