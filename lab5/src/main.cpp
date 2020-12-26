@@ -45,9 +45,9 @@ int main(int argc, char *argv[])
         root->gen_offset(root);
         root->gen_label(root);
         
-        //root->printAST();
+        root->printAST();
         
-        root->gen_code(cout,root);
+        root->gen_code(asmfo,root);
     }
     return 0;
 }

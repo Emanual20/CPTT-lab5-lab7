@@ -1524,7 +1524,7 @@ void TreeNode::gen_localdec_code(ostream &asmo){
 void TreeNode::recover_localdec_stack(ostream &asmo){
     // TODO: in level 2 we will change eax into ret params
     asmo<<endl;
-    asmo<<"\tmovl\t$0, %eax"<<endl;
+    // asmo<<"\tmovl\t$0, %eax"<<endl;
     asmo<<"\tmovl\t%ebp, %esp"<<endl;
     asmo<<"\tpopl\t%ebp"<<endl;
 }
@@ -1697,6 +1697,32 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
             asmo<<t->label.begin_label<<":"<<endl;
 
         asmo<<"\tjmp\t"<<t->label.next_label<<endl;
+    }
+    else if(t->stype == STMT_RETURN){
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
+        // LEVEL3 func expand to return expr
+        // maybe return void
+        if(t->child){
+            TreeNode* ptr_expr = t->child;
+            if(ptr_expr -> nodeType == NODE_EXPR){
+                ptr_expr->gen_rec_code(asmo,ptr_expr);
+                asmo<<"\tmovl\t_lc"<<ptr_expr->intervar_num<<", %eax"<<endl;
+            }
+            else if(ptr_expr -> nodeType == NODE_CONST){
+                asmo<<"\tmovl\t$"<<ptr_expr->int_val<<", %eax"<<endl;
+            }
+            else if(ptr_expr -> nodeType == NODE_VAR){
+                asmo<<"\tmovl\t"<<ptr_expr->lookup_locglosymtab(ptr_expr)<<", %eax"<<endl;
+            }
+            else if(ptr_expr -> nodeType == NODE_ARRAY){
+                ptr_expr->gen_rec_code(asmo,ptr_expr);
+                asmo<<"\tmovl\t_lc"<<ptr_expr->intervar_num<<", %eax"<<endl;
+            }
+        }
+        else{
+            asmo<<"\txorl\t%eax, %eax"<<endl;
+        }
     }
     else{
         // begin label will print out of this func

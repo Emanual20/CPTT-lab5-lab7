@@ -251,6 +251,18 @@ statement
 funccall
 : scanfstmt SEMICOLON {$$=$1;}
 | printfstmt SEMICOLON {$$=$1;}
+| otherfuncstmt SEMICOLON {$$=$1;}
+;
+
+otherfuncstmt
+: IDENTIFIER LOP_LPAREN otherparamlist LOP_RPAREN{
+    TreeNode* node = new TreeNode(lineno, NODE_FUNCALL);
+    node->type = TYPE_VOID;
+    node->var_name = $1->var_name;
+    node->addChild($1);
+    node->addChild($3);
+    $$ = node;
+}
 ;
 
 scanfstmt
@@ -279,6 +291,26 @@ printfstmt
     node->addChild($3);
     node->var_name="printf";
     $$ = node;
+}
+;
+
+otherparamlist
+: AddExp{
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_UFUNC;
+    expnode->addChild($1);
+    
+    TreeNode* node = new TreeNode(lineno, NODE_LIST);
+    node->addChild(expnode);
+    $$ = node;
+}
+| otherparamlist LOP_COMMA AddExp{
+    TreeNode* expnode = new TreeNode(lineno, NODE_ITEM);
+    expnode->itype = ITEM_UFUNC;
+    expnode->addChild($3);
+    
+    $$ = $1;
+    $$->addChild(expnode);
 }
 ;
 
