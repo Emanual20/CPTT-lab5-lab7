@@ -1972,7 +1972,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %ecx"<<endl;
             }
             else if(ptr_param2 -> is_have_intervar()){
-                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %ecx"<<endl;
             }
 
             asmo<<"\tidivl\t%ecx"<<endl;
@@ -2023,7 +2023,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tmovl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %edx"<<endl;
             }
             else if(ptr_param2 -> is_have_intervar()){
-                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %edx"<<endl;
             }
 
 
@@ -2112,7 +2112,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
                 asmo<<"\tcmpl\t"<<ptr_param2->lookup_locglosymtab(ptr_param2)<<", %eax"<<endl;
             }
             else if(ptr_param2 -> is_have_intervar()){
-                asmo<<"\tmovl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
+                asmo<<"\tcmpl\t_lc"<<ptr_param2->intervar_num<<", %eax"<<endl;
             }
 
             if(this->optype == OP_EEQ)
