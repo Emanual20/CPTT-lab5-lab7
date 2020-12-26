@@ -39,16 +39,16 @@ int main(int argc, char *argv[])
         if(root->Type_Check(root)==-1){
             return 0;
         }
-
+        //cerr<<"type check finish"<<endl;
         // generate the intervar mark used in generating codes
         root->gen_intervar(root);
         //cerr<<"gen intervar finish"<<endl;
         root->gen_offset(root);
         root->gen_label(root);
         
-        root->printAST();
+        //root->printAST();
         
-        root->gen_code(asmfo,root);
+        root->gen_code(cout,root);
     }
     return 0;
 }

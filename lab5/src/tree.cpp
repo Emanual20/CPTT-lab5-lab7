@@ -120,6 +120,8 @@ void TreeNode::printNodeInfo() {
         <<" ThisScope_Space: "<<this->thisscope_var_space<<" "
         <<" Scope_OFFSET: "<<this->scope_offset<<"]";
 
+    //cout<<" INTERVAL: "<<this->intervar_num;
+
     cout<<endl<<endl;
 }
 
@@ -1152,8 +1154,11 @@ void TreeNode::gen_intervar(TreeNode* t){
         TreeNode::localvar_cnt += 1;
         TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
     }
-    else if(ptr->nodeType == NODE_FUNCALL){
+    else if(ptr->nodeType == NODE_FUNCALL && 
+        (ptr->var_name != "scanf" && ptr->var_name != "printf")){
+
         TreeNode* ptr_item = ptr->findChild(2)->findChild(1);
+        // cuz scanf or printf's first param is not a expr
         while(ptr_item){
             if(ptr_item->nodeType == NODE_ITEM 
                 && ptr_item->itype == ITEM_UFUNC){
