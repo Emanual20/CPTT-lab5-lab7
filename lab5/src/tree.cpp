@@ -1309,6 +1309,41 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             }
             break;
         }
+        case STMT_BREAK:{
+            // find the pointer to the loop node
+            TreeNode* loop_ptr = this;
+            while(loop_ptr){
+                if(loop_ptr->stype == STMT_FOR || loop_ptr->stype == STMT_WHILE){
+                    break;
+                }
+                loop_ptr = loop_ptr -> fath;
+            }
+
+            this->label.next_label = loop_ptr->label.next_label;
+
+            break;
+        }
+        case STMT_CONTINUE:{
+            // find the pointer to the loop node
+            TreeNode* loop_ptr = this;
+            while(loop_ptr){
+                if(loop_ptr->stype == STMT_FOR || loop_ptr->stype == STMT_WHILE){
+                    break;
+                }
+                loop_ptr = loop_ptr -> fath;
+            }
+
+            if(loop_ptr->stype == STMT_FOR){
+                // forstmt's first child is stmt
+                this->label.next_label = loop_ptr->findChild(1)->label.next_label;
+            }
+            else if(loop_ptr->stype == STMT_WHILE){
+                // while's second child is stmt
+                this->label.next_label = loop_ptr->findChild(2)->label.next_label;
+            }
+
+            break;
+        }
         default:{
             ;
         }
@@ -1656,6 +1691,12 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         ptr_expr3->gen_rec_code(asmo,ptr_expr3);
         asmo<<"\tjmp\t"<<ptr_expr2->label.begin_label<<endl;
         asmo<<endl;
+    }
+    else if(t->stype == STMT_BREAK || t->stype == STMT_CONTINUE){
+        if(t->label.begin_label!="")
+            asmo<<t->label.begin_label<<":"<<endl;
+
+        asmo<<"\tjmp\t"<<t->label.next_label<<endl;
     }
     else{
         // begin label will print out of this func
