@@ -213,6 +213,8 @@ funcparam
     TreeNode* node = new TreeNode(lineno, NODE_ITEM);
     node->itype=ITEM_UFUNC;
     node->type=$1->type;
+    $2->is_param = true;
+    $2->type = $1->type;
     node->addChild($2);
     $$=node;
 }

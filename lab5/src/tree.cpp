@@ -115,6 +115,7 @@ void TreeNode::printNodeInfo() {
     cout<<"]";
 
     cout<<"  isdec = "<<this->is_dec;
+    cout<<"  isparam = "<<this->is_param;
 
     cout<<" [LocVAR_SZ: "<<this->local_var_size<<" "
         <<" ThisScope_Space: "<<this->thisscope_var_space<<" "
@@ -191,6 +192,27 @@ void TreeNode::genSymbolTable(){
         //items.type has not been recorded;
         // cout<<items.dec_cnt<<endl;
         TreeNode::ptr_nst->SymTable[this->var_name]=items;
+    }
+    else if(this->nodeType == NODE_VAR && this->is_param){
+        // param shall be in the function scope
+        // this->fath(node_item)->fath(node_list)->sibling(node_block)
+        TreeNode* ptr_funcblock = this->fath->fath->sibling;
+        bool is_exist = ptr_funcblock->SymTable.find(this->var_name) 
+                        != ptr_funcblock->SymTable.end();
+        varItem items;
+        // cout<<this->var_name<<" "<<is_exist<<" ";
+        if(!is_exist){
+            items.fDecNode = this;
+            items.dec_cnt = 1;
+            items.is_param = true;
+        }
+        else{
+            items = ptr_funcblock->SymTable[this->var_name];
+            items.dec_cnt++;
+        }
+        //items.type has not been recorded;
+        // cout<<items.dec_cnt<<endl;
+        ptr_funcblock->SymTable[this->var_name]=items;
     }
     else if(this->nodeType == NODE_ARRAY && this->is_dec){
         bool is_exist = TreeNode::ptr_nst->SymTable.find(this->child->var_name) 
@@ -374,7 +396,7 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
     if(this->child!=nullptr) ret = ret && this->child->Type_Check_FirstTrip(root_ptr);
 
     if(this->nodeType==NODE_VAR){
-        if(this->is_dec){
+        if(this->is_dec && !(this->is_param)){
             if(this->Is_Dupdefined(this->var_name,root_ptr)){
                 cerr<<"the variable "<<this->var_name
                     <<" in line:"<<this->lineno
@@ -393,6 +415,9 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
                 tmp_ptr = tmp_ptr -> fath;
             }
         }
+        else if(this->is_param){
+            ;
+        }
         else{
             if(!this->Is_Defined(this->var_name,root_ptr)){
                 cerr<<"the variable "<<this->var_name
@@ -403,7 +428,7 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
         }
     }
     else if(this->nodeType == NODE_ARRAY){
-        if(this->is_dec){
+        if(this->is_dec && !(this->is_param)){
             if(this->Is_Dupdefined(this->child->var_name,root_ptr)){
                 cerr<<"the array "<<this->child->var_name
                     <<" in line:"<<this->lineno
@@ -421,6 +446,9 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
             //     }
             //     tmp_ptr = tmp_ptr -> fath;
             // }
+        }
+        else if(this->is_param){
+            ;
         }
         else{
             if(!this->Is_Defined(this->child->var_name,root_ptr)){
@@ -500,6 +528,7 @@ bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
     bool ret = true;
     if(this->child!=nullptr) ret = ret && this->child->Type_Check_ThirdTrip(ptr);
 
+    // cerr<<this->nodeID<<endl;
     switch(this->nodeType){
         case NODE_EXPR:{
             if(this->stype==STMT_EXP){
@@ -590,10 +619,12 @@ bool TreeNode::Type_Check_ThirdTrip(TreeNode* ptr){
                         break;
                     }
                     case OP_GREA:{
+                        // cerr<<"hello"<<endl;
                         if(this->findChild(1)->type->is_can_shrinktobool()&&this->findChild(2)->type->is_can_shrinktobool()){
                             this->type = TYPE_BOOL;
                         }
                         else this->type = TYPE_ERROR;
+                        // cerr<<"goodbye"<<endl;
                         break;
                     }
                     case OP_LE:{
@@ -1365,9 +1396,15 @@ void TreeNode::gen_stmt_label(TreeNode* t){
             }
 
             TreeNode* ptr_rightmostchild = t->findrightmostchild();
-            if(t->label.next_label!="" && ptr_rightmostchild!=nullptr){
+            if(t->label.next_label=="")
+                t->label.next_label = new_label();
+            if(ptr_rightmostchild!=nullptr){
                 ptr_rightmostchild->label.next_label = t->label.next_label;
             }
+
+            // if(t->sibling!=nullptr){
+            //     t->sibling->label.begin_label = t->label.next_label;
+            // }
 
             TreeNode* aim_node = t->findChild(1);
             while(aim_node){
@@ -1591,9 +1628,6 @@ void TreeNode::gen_localdec_code(ostream &asmo){
 void TreeNode::recover_localdec_stack(ostream &asmo){
     // TODO: in level 2 we will change eax into ret params
     asmo<<endl;
-    // asmo<<"\tmovl\t$0, %eax"<<endl;
-    asmo<<"\tmovl\t%ebp, %esp"<<endl;
-    asmo<<"\tpopl\t%ebp"<<endl;
 }
 
 void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
@@ -1791,6 +1825,9 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         else{
             asmo<<"\txorl\t%eax, %eax"<<endl;
         }
+        asmo<<"\tmovl\t%ebp, %esp"<<endl;
+        asmo<<"\tpopl\t%ebp"<<endl;
+        asmo<<"\tret"<<endl<<endl;
     }
     else{
         // begin label will print out of this func
@@ -2426,7 +2463,6 @@ void TreeNode::gen_func_code(ostream &asmo,TreeNode* t){
         block_ptr->gen_rec_code(asmo,block_ptr);
 
         block_ptr->recover_localdec_stack(asmo);
-        asmo<<"\tret"<<endl<<endl;
     }
 }
 
@@ -2769,9 +2805,10 @@ string TreeNode::lookup_locglosymtab(TreeNode* t){
             }
             else{
                 // cerr<<this->nodeID<<" "<<this->scope_offset<<endl;
-                ret = to_string(- ptr_temp->scope_offset + INT_SIZE +
-                    ptr_temp->SymTable[this->var_name].local_offset) 
-                + "(%ebp)";
+                ret = to_string( - ptr_temp->scope_offset 
+                                 + INT_SIZE 
+                                 + ptr_temp->SymTable[this->var_name].local_offset) 
+                    + "(%ebp)";
             }
             break;
         }
@@ -2845,6 +2882,43 @@ void TreeNode::gen_offset(TreeNode* rt){
     if(this->child!=nullptr) this->child->gen_offset(rt);
 }
 
+void TreeNode::gen_params_offset(){
+    this->calc_params_offset();
+    if(this->child!=nullptr) this->child->gen_params_offset();
+    if(this->sibling!=nullptr) this->sibling->gen_params_offset();
+}
+
+void TreeNode::calc_params_offset(){
+    if(this->nodeType != NODE_FUNC){
+        return;
+    }
+    // cerr<<this->nodeID<<endl;
+
+    TreeNode* ptr_paramslist = this->findChild(2);
+    TreeNode* ptr_funcblock = this->findChild(3);
+
+    TreeNode* ptr_item = ptr_paramslist->findChild(1);
+    int cnt = 0;
+    while(ptr_item){
+        TreeNode* ptr_itemdata = ptr_item->findChild(1);
+
+        // cerr<<"blk:"<<ptr_funcblock->nodeID<<endl;
+
+        varItem sym_item =  ptr_funcblock->SymTable[ptr_itemdata->var_name];
+        // cerr<<"before:"<<sym_item.local_offset<<endl;
+        sym_item.local_offset = ptr_funcblock->scope_offset
+                              + STACK_RESERVE_SIZE
+                              + cnt * INT_SIZE
+                              - INT_SIZE;
+        // cerr<<"after calc:"<<sym_item.local_offset<<endl;
+        ptr_funcblock->SymTable[ptr_itemdata->var_name] = sym_item;
+        // cerr<<"after written:"<<ptr_funcblock->SymTable[ptr_itemdata->var_name].local_offset<<endl;
+
+        cnt++;
+        ptr_item = ptr_item -> sibling;
+    }
+}
+
 void TreeNode::calc_local_offset(TreeNode* rt){
     // calc the local offset of vars in current symboltable
     // TODO: you shall change this to support other types
@@ -2880,6 +2954,8 @@ void TreeNode::calc_local_var_size(){
         // LEVEL2: change to calc array size
         int tot_var_size = 0;
         for(map<string,varItem>::iterator it = this->SymTable.begin(); it!=this->SymTable.end(); it++){
+            if(it->second.is_param) continue;
+
             TreeNode* fdec_ptr = it->second.fDecNode;
             if(fdec_ptr->nodeType == NODE_VAR){
                 tot_var_size += 1;
@@ -2910,8 +2986,11 @@ void TreeNode::calc_thisscope_var_space(){
         // // TODO: can expand by struct or function or something
         // this->thisscope_var_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
         // LEVEL2: change to calc array size
+        // LEVEL3: ignore params while calculating
         int tot_space = 0;
         for(map<string,varItem>::iterator it = this->SymTable.begin(); it!=this->SymTable.end(); it++){
+            if(it->second.is_param) continue;
+
             TreeNode* fdec_ptr = it->second.fDecNode;
             if(fdec_ptr->nodeType == NODE_VAR){
                 tot_space += INT_SIZE;

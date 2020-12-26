@@ -100,6 +100,8 @@ public:
         int dec_cnt = 0;
     // local offset
         int local_offset = -1;
+    // if the var is a param of a function
+        bool is_param = 0;
     };
 
     int nodeID;
@@ -135,7 +137,8 @@ public:
     int int_val;
     char ch_val;
     bool b_val;
-    bool is_dec=false; // to record if a NODE_VAR appears in a declstmt 
+    bool is_dec=false; // to record if a NODE_VAR appears in a declstmt
+    bool is_param=false;
     string str_val;
     string var_name;   
 public:
@@ -238,6 +241,12 @@ public:
 
 public:
     // function module
+    // to calc params offset, need to be call in a recursive traverse
+    // either bottom -> top or top -> bottom
+    // called in gen_params_offset() func
+    void calc_params_offset();
+    // just traverse call calc_params_offset() func
+    void gen_params_offset();
 };
 
 #endif

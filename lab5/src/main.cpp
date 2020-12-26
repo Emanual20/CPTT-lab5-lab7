@@ -45,10 +45,11 @@ int main(int argc, char *argv[])
         //cerr<<"gen intervar finish"<<endl;
         root->gen_offset(root);
         root->gen_label(root);
+        root->gen_params_offset();
         
-        //root->printAST();
+        root->printAST();
         
-        root->gen_code(cout,root);
+        root->gen_code(asmfo,root);
     }
     return 0;
 }
