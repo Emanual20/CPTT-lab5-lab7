@@ -2704,7 +2704,9 @@ void TreeNode::gen_array_code(ostream &asmo,TreeNode* t){
         // just to translate movl %ecx(%ebp), _lc xx
         asmo<<"\tmovl\t%ebp, %eax"<<endl;
         asmo<<"\taddl\t%ecx, %eax"<<endl;
-        asmo<<"\tmovl\t(%eax), _lc"<<this->intervar_num<<endl;
+        // asmo<<"\tmovl\t(%eax), _lc"<<this->intervar_num<<endl;
+        asmo<<"\tmovl\t(%eax), %eax"<<endl;
+        asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
     }
 
     asmo<<endl;
