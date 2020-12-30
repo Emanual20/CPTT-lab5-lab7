@@ -142,6 +142,7 @@ public:
     bool is_dec=false; // to record if a NODE_VAR appears in a declstmt
     bool is_param=false;
     bool is_const=false;
+    bool is_ignore=false;
     string str_val;
     string var_name;   
 public:

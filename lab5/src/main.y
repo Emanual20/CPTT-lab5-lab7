@@ -229,6 +229,16 @@ funcparam
     node->addChild($2);
     $$=node;
 }
+| T Arraydeclval{
+    TreeNode* node = new TreeNode(lineno, NODE_ITEM);
+    node->itype=ITEM_UFUNC;
+    node->type=$1->type;
+    $2->is_param = true;
+    $2->child->is_ignore=true;
+    $2->type = $1->type;
+    node->addChild($2);
+    $$=node;
+}
 ;
 
 block
@@ -463,6 +473,19 @@ Arraydeclval
     $$->addChild($1);
     TreeNode* node = new TreeNode($3->lineno,NODE_ITEM);
     node->addChild($3);
+    $$->addChild(node);
+    $$->array_dim = 1;
+}
+| IDENTIFIER LOP_LBRKET LOP_RBRKET{
+    $$ = new TreeNode($1->lineno,NODE_ARRAY);
+    $$->addChild($1);
+    TreeNode* node = new TreeNode($1->lineno,NODE_ITEM);
+
+    TreeNode* intnode = new TreeNode($1->lineno,NODE_CONST);
+    intnode->type = TYPE_INT;
+    intnode->int_val = 0;
+
+    node->addChild(intnode);
     $$->addChild(node);
     $$->array_dim = 1;
 }

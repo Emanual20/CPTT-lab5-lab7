@@ -3,6 +3,7 @@
 const int INT_SIZE = 4;
 const int ALLOC_MINIMUM_SIZE = 4;
 const int STACK_RESERVE_SIZE = 8;
+const int SCOPE_MINIMUM_SIZE = 16;
 const int PRINTF_STR_SIZE = 1;
 const int CHAR_SIZE = 1;
 
@@ -241,6 +242,25 @@ void TreeNode::genSymbolTable(){
         }
         TreeNode::ptr_nst->SymTable[this->child->var_name]=items;
     }
+    else if(this->nodeType == NODE_ARRAY && this->is_param){
+        TreeNode* ptr_funcblock = this->fath->fath->sibling;
+        bool is_exist = ptr_funcblock->SymTable.find(this->child->var_name) 
+                        != ptr_funcblock->SymTable.end();
+        varItem items;
+
+        if(!is_exist){
+            // has to pull type from item_node
+            this->type = this->fath->type;
+            items.fDecNode = this;
+            items.dec_cnt = 1;
+            items.is_param = true;
+        }
+        else{
+            items = ptr_funcblock->SymTable[this->child->var_name];
+            items.dec_cnt++;
+        }
+        ptr_funcblock->SymTable[this->child->var_name]=items;
+    }
 
     if(this->child!=nullptr) this->child->genSymbolTable();
 
@@ -382,30 +402,31 @@ int TreeNode::Type_Check(TreeNode *root_ptr){
         cout<<"type error"<<endl;
         return -1;
     }
-    // cerr<<"type check first trip finish"<<endl;
+    cerr<<"type check first trip finish"<<endl;
 
     if(!root_ptr->Type_Check_FirstPointFiveTrip(root_ptr)){
         cout<<"something error in 1.5 trip"<<endl;
         return -1;
     }
+    cerr<<"type check 1.5 trip finish"<<endl;
 
     // gen_identifier_types
     root_ptr->Type_Check_SecondTrip(root_ptr);
-    // cerr<<"type check second trip finish"<<endl;
+    cerr<<"type check second trip finish"<<endl;
 
     // expr type check
     if(!root_ptr->Type_Check_ThirdTrip(root_ptr)){
         cout<<"expr accordinate error"<<endl;
         return -1;
     }
-    // cerr<<"type check third trip finish"<<endl;
+    cerr<<"type check third trip finish"<<endl;
 
     // stmt type check
     if(!root_ptr->Type_Check_FourthTrip(root_ptr)){
         cout<<"stmt accordinate error"<<endl;
         return -1;
     }
-    // cerr<<"type check fourth trip finish"<<endl;
+    cerr<<"type check fourth trip finish"<<endl;
 
     return 1;
 }
@@ -414,7 +435,7 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
     bool ret = true;
     if(this->child!=nullptr) ret = ret && this->child->Type_Check_FirstTrip(root_ptr);
 
-    if(this->nodeType==NODE_VAR){
+    if(this->nodeType==NODE_VAR && !this->is_ignore){
         if(this->is_dec && !(this->is_param)){
             if(this->Is_Dupdefined(this->var_name,root_ptr)){
                 cerr<<"the variable "<<this->var_name
@@ -447,6 +468,7 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
         }
     }
     else if(this->nodeType == NODE_ARRAY){
+        // cerr<<this->nodeID<<" "<<this->is_param<<" "<<this->is_dec<<endl;
         if(this->is_dec && !(this->is_param)){
             if(this->Is_Dupdefined(this->child->var_name,root_ptr)){
                 cerr<<"the array "<<this->child->var_name
@@ -491,6 +513,7 @@ bool TreeNode::Type_Check_FirstPointFiveTrip(TreeNode* root_ptr){
     if(this->nodeType==NODE_FUNCALL && 
         (this->var_name != "scanf" && this->var_name != "printf")){
         // if funcall name is "scanf" or "printf", ignore them
+        // cerr<<this->nodeID<<endl;
         TreeNode* ptr_fdecnode;
         if(!this->is_dec){
             TreeNode* now_ptr = this;
@@ -515,16 +538,25 @@ bool TreeNode::Type_Check_FirstPointFiveTrip(TreeNode* root_ptr){
     else if(this->nodeType==NODE_EXPR && 
         (this->optype == OP_EQ || this->optype == OP_PLUSEQ || this->optype == OP_MINUSEQ
             || this->optype == OP_MODEQ || this->optype == OP_MULEQ || this->optype == OP_DIVEQ)){
+        // cerr<<this->nodeID<<endl;
         TreeNode* ptr_lvalidusenode = this->findChild(1)->findChild(1);
         // cerr<<this->nodeID<<" "<<ptr_lvalidusenode->nodeID<<endl;
 
         TreeNode* ptr_fdecnode;
+        string usevar_name = "";
+        if(ptr_lvalidusenode->nodeType == NODE_ARRAY) 
+            usevar_name = ptr_lvalidusenode -> findChild(1) -> var_name;
+        else
+            usevar_name = ptr_lvalidusenode -> var_name;
+
         if(!ptr_lvalidusenode->is_dec){
             TreeNode* now_ptr = ptr_lvalidusenode;
             while(now_ptr){
+                // cerr<<now_ptr->nodeID<<" ";
                 if(now_ptr->IsSymbolTableOn() && 
-                    now_ptr->Is_InSymbolTable(ptr_lvalidusenode->lineno,ptr_lvalidusenode->var_name)){
-                    ptr_fdecnode = now_ptr->SymTable[ptr_lvalidusenode->var_name].fDecNode;
+                    now_ptr->Is_InSymbolTable(ptr_lvalidusenode->lineno,usevar_name)){
+                    // cerr<<"note"<<now_ptr->nodeID<<endl;
+                    ptr_fdecnode = now_ptr->SymTable[usevar_name].fDecNode;
                     break;
                 }
                 if(now_ptr==root_ptr) break;
@@ -547,7 +579,7 @@ bool TreeNode::Type_Check_SecondTrip(TreeNode* ptr){
     if(this->child!=nullptr) this->child->Type_Check_SecondTrip(ptr);
 
     // to generate all types from symboltable
-    if(this->nodeType==NODE_VAR){
+    if(this->nodeType==NODE_VAR && !this->is_ignore){
         if(!this->is_dec){
             TreeNode* now_ptr = this;
             while(now_ptr){
@@ -1551,7 +1583,7 @@ void TreeNode::gen_expr_label(TreeNode* t){
 
     switch(t->optype){
         case OP_LAND:{
-            cerr<<1<<endl;
+            // cerr<<1<<endl;
             child1->label.true_label = child1->new_label();
             child2->label.true_label = t->label.true_label;
             child1->label.false_label = t->label.false_label;
@@ -1705,7 +1737,7 @@ void TreeNode::gen_localdec_code(ostream &asmo){
     int var_num = this->local_var_size;
     // calc the local space need to allocate
     // TODO: can expand by struct or function or something
-    int local_apply_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
+    int local_apply_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / SCOPE_MINIMUM_SIZE) * SCOPE_MINIMUM_SIZE;
 
     asmo<<"\tpushl\t"<<"%ebp"<<endl;
     asmo<<"\tmovl\t"<<"%esp, %ebp"<<endl;
@@ -2114,7 +2146,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
 
             if(ptr_param1 -> nodeType == NODE_VAR){
-                asmo<<"\tleal\t"<<ptr_param1->lookup_locglosymtab()<<", %eax"<<endl;
+                asmo<<"\tmovl\t"<<ptr_param1->lookup_locglosymtab()<<", %eax"<<endl;
             }
             else{
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
@@ -3033,7 +3065,11 @@ void TreeNode::calc_params_offset(){
     TreeNode* ptr_item = ptr_paramslist->findChild(1);
     int cnt = 0;
     while(ptr_item){
-        TreeNode* ptr_itemdata = ptr_item->findChild(1);
+        TreeNode* ptr_itemdata;
+        if(ptr_item->findChild(1)->nodeType == NODE_VAR)
+            ptr_itemdata = ptr_item->findChild(1);
+        else if(ptr_item->findChild(1)->nodeType == NODE_ARRAY)
+            ptr_itemdata = ptr_item->findChild(1)->findChild(1);
 
         // cerr<<"blk:"<<ptr_funcblock->nodeID<<endl;
 
