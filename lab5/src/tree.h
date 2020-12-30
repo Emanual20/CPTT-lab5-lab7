@@ -193,7 +193,7 @@ public:
     struct Label label;
     void gen_label(TreeNode* root_ptr);
     string new_label();
-    void gen_rec_stmtorexpr_label(TreeNode* t);
+    void gen_rec_stmtorexpr_label();
     void gen_stmt_label(TreeNode* t);
     void gen_expr_label(TreeNode* t);
 public:
@@ -209,7 +209,7 @@ public:
     // call calc_local_offset & dist_scope_offset to gen_offset
     void gen_offset(TreeNode* t);
     // calc local offset in now scope
-    void calc_local_offset(TreeNode* rt);
+    void calc_local_offset();
     // calc the max local vars will decl in this function, need to call at a bottom->top recursion
     void calc_local_var_size();
     // calc the vars in now local_vars, call in any recursion
@@ -222,33 +222,34 @@ public:
     void gen_code(ostream &out,TreeNode* t);
     void gen_asm_header(ostream &out);
     void gen_glob_decl(ostream &out,TreeNode* t);
-    void gen_intervardecl_code(ostream &out, TreeNode* t);
+    void gen_intervardecl_code(ostream &out);
     void gen_rec_code(ostream &out,TreeNode* t);
     void gen_stmt_code(ostream &out,TreeNode* t);
-    void gen_expr_code(ostream &out,TreeNode* t);
-    void gen_func_code(ostream &out,TreeNode* t);
-    void gen_funcall_code(ostream &asmo,TreeNode *t);
+    void gen_expr_code(ostream &out);
+    void gen_func_code(ostream &out);
+    void gen_funcall_code(ostream &asmo);
     void gen_prog_code(ostream &out,TreeNode* t);
     void gen_localdec_code(ostream &out);
-    void recover_localdec_stack(ostream &out);
-    string lookup_locglosymtab(TreeNode* t);
+    string lookup_locglosymtab();
 
 public:
     // array module
     int array_dim = 0;
-    void gen_array_code(ostream &asmo,TreeNode* t);
+    void gen_array_code(ostream &asmo);
     // before call this function, you must store the number in %eax
-    void gen_array_store_code(ostream &asmo,TreeNode* t);
+    void gen_array_store_code(ostream &asmo);
     // string gen_lvalarray_offset_code();
     // string lookup_locglosymtab(TreeNode* t,vector<int> v);
     // int calc_array_linearoffset(vector<int> v);
-    void gen_array_calcaddress_code(ostream &asmo, TreeNode* t);
+    void gen_array_calcaddress_code(ostream &asmo);
 
 public:
-    // function module
-    // to calc params offset, need to be call in a recursive traverse
-    // either bottom -> top or top -> bottom
-    // called in gen_params_offset() func
+    /* 
+    FUNCTION MODULE
+    to calc params offset, need to be call in a recursive traverse
+    either bottom -> top or top -> bottom
+    called in gen_params_offset() func
+    */
     void calc_params_offset();
     // just traverse call calc_params_offset() func
     void gen_params_offset();
