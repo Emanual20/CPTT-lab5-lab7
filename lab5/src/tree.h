@@ -118,6 +118,7 @@ public:
     void addSibling(TreeNode*);
     TreeNode* findChild(int offset);
     TreeNode* findrightmostchild();
+    int calc_child_num();
     
     void printNodeInfo();
     void printChildrenId();
@@ -140,6 +141,7 @@ public:
     bool b_val;
     bool is_dec=false; // to record if a NODE_VAR appears in a declstmt
     bool is_param=false;
+    bool is_const=false;
     string str_val;
     string var_name;   
 public:
@@ -153,6 +155,7 @@ public:
     // functions related to type check
     int Type_Check(TreeNode*);
     bool Type_Check_FirstTrip(TreeNode*); // to check is_defined & is_dupdefined
+    bool Type_Check_FirstPointFiveTrip(TreeNode*); // to check funcall params, const var reassign
     bool Type_Check_SecondTrip(TreeNode*); // to generate all types from symboltable
     bool Type_Check_ThirdTrip(TreeNode*); // to analyze expr type
     bool Type_Check_FourthTrip(TreeNode*); // to analyze all other statements and other tokens

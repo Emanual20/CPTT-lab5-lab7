@@ -88,10 +88,11 @@ constdefitem
 : IDENTIFIER LOP_ASSIGN constinitval{
     TreeNode* node = new TreeNode($1->lineno, NODE_ITEM);
     node->itype = ITEM_DECL;
-    $1->is_dec = true; 
+    $1->is_dec = $1->is_const = true; 
     node->addChild($1);
     node->addChild($3);
     $$ = node;
+    $$->is_const = true;
 } 
 ;
 

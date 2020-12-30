@@ -71,6 +71,16 @@ TreeNode* TreeNode::findrightmostchild(){
     return ptr_temp;
 }
 
+int TreeNode::calc_child_num(){
+    int ret = 0;
+    TreeNode* tmp = this->child;
+    while(tmp){
+        ret += 1;
+        tmp = tmp -> sibling;
+    }
+    return ret;
+}
+
 TreeNode::TreeNode(int lineno, NodeType type) {
     this->lineno=lineno;
     this->nodeType=type;
@@ -374,6 +384,11 @@ int TreeNode::Type_Check(TreeNode *root_ptr){
     }
     // cerr<<"type check first trip finish"<<endl;
 
+    if(!root_ptr->Type_Check_FirstPointFiveTrip(root_ptr)){
+        cout<<"something error in 1.5 trip"<<endl;
+        return -1;
+    }
+
     // gen_identifier_types
     root_ptr->Type_Check_SecondTrip(root_ptr);
     // cerr<<"type check second trip finish"<<endl;
@@ -465,6 +480,67 @@ bool TreeNode::Type_Check_FirstTrip(TreeNode* root_ptr){
     }
     // recursive type check
     if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FirstTrip(root_ptr);
+    return ret;
+}
+
+bool TreeNode::Type_Check_FirstPointFiveTrip(TreeNode* root_ptr){
+    bool ret = true;
+    if(this->child!=nullptr) ret = ret && this->child->Type_Check_FirstPointFiveTrip(root_ptr);
+
+    // cerr<<this->nodeID<<endl;
+    if(this->nodeType==NODE_FUNCALL && 
+        (this->var_name != "scanf" && this->var_name != "printf")){
+        // if funcall name is "scanf" or "printf", ignore them
+        TreeNode* ptr_fdecnode;
+        if(!this->is_dec){
+            TreeNode* now_ptr = this;
+            while(now_ptr){
+                if(now_ptr->IsSymbolTableOn() && 
+                    now_ptr->Is_InSymbolTable(this->lineno,this->child->var_name)){
+                    ptr_fdecnode = now_ptr->SymTable[this->child->var_name].fDecNode;
+                    break;
+                }
+                if(now_ptr==root_ptr) break;
+                now_ptr = now_ptr -> fath;
+            }
+        }
+        if(this->findChild(2)->calc_child_num() !=
+            ptr_fdecnode->findChild(2)->calc_child_num()){
+            // cerr<<this->findChild(2)->calc_child_num()<<" "<<ptr_fdecnode->findChild(2)->calc_child_num()<<endl;
+            this->type = TYPE_ERROR;
+            cerr<<"[error] funccall params number accordinate error in lineno "<<this->lineno<<endl;
+        }
+    }
+    else if(this->nodeType==NODE_EXPR && 
+        (this->optype == OP_EQ || this->optype == OP_PLUSEQ || this->optype == OP_MINUSEQ
+            || this->optype == OP_MODEQ || this->optype == OP_MULEQ || this->optype == OP_DIVEQ)){
+        TreeNode* ptr_lvalidusenode = this->findChild(1)->findChild(1);
+        cerr<<ptr_lvalidusenode->nodeID<<endl;
+
+        TreeNode* ptr_fdecnode;
+        if(!ptr_lvalidusenode->is_dec){
+            TreeNode* now_ptr = ptr_lvalidusenode;
+            while(now_ptr){
+                if(now_ptr->IsSymbolTableOn() && 
+                    now_ptr->Is_InSymbolTable(ptr_lvalidusenode->lineno,ptr_lvalidusenode->child->var_name)){
+                    ptr_fdecnode = now_ptr->SymTable[ptr_lvalidusenode->child->var_name].fDecNode;
+                    break;
+                }
+                if(now_ptr==root_ptr) break;
+                now_ptr = now_ptr -> fath;
+            }
+        }
+        if(ptr_fdecnode->is_const==true){
+            this->type = TYPE_ERROR;
+            cerr<<"[error] assign value for a const var in lineno "<<this->lineno<<endl;
+        }
+    }
+
+    if(this->type == TYPE_ERROR){
+        ret = false;
+    }
+
+    if(this->sibling!=nullptr) ret = ret && this->sibling->Type_Check_FirstPointFiveTrip(root_ptr);
     return ret;
 }
 
@@ -916,12 +992,14 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
             }
             case STMT_CONSTDECL:{
                 // TODO: in v2.0 we have to finish this
+                // cuz we didn't support with no assignment in yacc, so don't need check in constdecl
+                this->type = TYPE_VOID;
                 break;
             }
-            case STMT_STRUCTDECL:{
-                // TODO: in v2.0 we have to finish this
-                break;
-            }
+            // case STMT_STRUCTDECL:{
+            //     // TODO: in v2.0 we have to finish this
+            //     break;
+            // }
             default:{
                 cout<<"we didn't support this type of statement yet.."<<endl;
             }
@@ -2054,7 +2132,7 @@ void TreeNode::gen_expr_code(ostream &asmo,TreeNode* t){
             else{
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
             }
-            
+
             asmo<<"\tmovl\t(%eax), %eax"<<endl;
             asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;  
 
