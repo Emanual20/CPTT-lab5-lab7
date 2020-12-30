@@ -54,6 +54,7 @@ enum OperatorType{
     OP_FPLUS, // +
     OP_FMINUS, // -
     OP_QUOTE, // &
+    OP_FVALUE, // *
     OP_NOT, // !
     OP_MUL, // *
     OP_DIV, // / 
@@ -238,6 +239,7 @@ public:
     // string gen_lvalarray_offset_code();
     // string lookup_locglosymtab(TreeNode* t,vector<int> v);
     // int calc_array_linearoffset(vector<int> v);
+    void gen_array_calcaddress_code(ostream &asmo, TreeNode* t);
 
 public:
     // function module

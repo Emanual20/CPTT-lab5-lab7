@@ -6,7 +6,7 @@
     int yylex();
     int yyerror( char const * );
 %}
-%token T_CHAR T_INT T_STRING T_BOOL T_VOID
+%token T_CHAR T_INT T_STRING T_BOOL T_VOID T_PCHAR T_PINT T_PBOOL
 
 %token KEY_IF KEY_ELSE KEY_FOR KEY_WHILE KEY_CONTINUE KEY_BREAK KEY_RETURN KEY_SCANF KEY_PRINTF KEY_CONST KEY_STRUCT KEY_PUBLIC KEY_PRIVATE
 
@@ -26,7 +26,7 @@
 
 %right LOP_LBRKET
 %left LOP_POINT LOP_RBRKET
-%right LOP_UMINUS LOP_UPLUS LOP_NOT LOP_QUOTE
+%right LOP_UMINUS LOP_UPLUS LOP_NOT LOP_QUOTE LOP_FVALUE
 %left LOP_MUL LOP_DIV LOP_MOD
 %left LOP_LESS LOP_GREA LOP_LE LOP_GE
 %left LOP_EEQ LOP_NEQ
@@ -112,7 +112,17 @@ vardeclstmt
 
     // add type to first declare node
     $$->type = $2->type = $1->type;
-} 
+}
+| TP declareitem{
+    TreeNode* node = new TreeNode($1->lineno, NODE_STMT);
+    node->stype = STMT_VARDECL;
+    node->addChild($1);
+    node->addChild($2);
+    $$ = node;
+
+    // add type to first declare node
+    $$->type = $2->type = $1->type;
+}
 | vardeclstmt LOP_COMMA declareitem {
     $1->addChild($3);
     $$ = $1;
@@ -572,6 +582,20 @@ UnaryExp
     node->addChild($2);
     $$ = node;
 }
+| LOP_MUL UnaryExp %prec LOP_FVALUE{
+    TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_FVALUE;
+    node->addChild($2);
+    $$ = node;
+}
+| LOP_QUOTE UnaryExp{
+    TreeNode* node = new TreeNode($2->lineno, NODE_EXPR);
+    node->stype = STMT_EXP;
+    node->optype = OP_QUOTE;
+    node->addChild($2);
+    $$ = node;
+}
 ;
 
 MulExp
@@ -773,6 +797,12 @@ T: T_INT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;}
 | T_CHAR {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_CHAR;}
 | T_BOOL {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_BOOL;}
 | T_STRING {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_STRING;}
+;
+
+// TODO: actually it shall be a pointer type
+TP: T_PINT {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;}
+| T_PCHAR {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;}
+| T_PBOOL {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_INT;}
 ;
 
 TV: T_VOID {$$ = new TreeNode(lineno, NODE_TYPE); $$->type = TYPE_VOID;}

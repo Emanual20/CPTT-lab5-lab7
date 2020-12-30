@@ -25,6 +25,9 @@ STRING \".+\"
 "char" return T_CHAR;
 "string" return T_STRING;
 "void" return T_VOID;
+"int*"|"int *" return T_PINT;
+"bool*"|"bool *" return T_PBOOL;
+"char*"|"char *" return T_PCHAR;
 
 "if" return KEY_IF;
 "else" return KEY_ELSE;
