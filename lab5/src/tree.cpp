@@ -2717,7 +2717,7 @@ void TreeNode::gen_array_code(ostream &asmo){
     if(this->nodeType!=NODE_ARRAY) return;
     TreeNode* ptr_useid = this->findChild(1);// ptr to this id
     TreeNode* temp = ptr_useid;
-    bool Is_Global = 0;
+    bool Is_Global = 0,Is_Param = 0;
     while(temp){
         if(temp->IsSymbolTableOn() 
             && temp->Is_InSymbolTable(ptr_useid->lineno,ptr_useid->var_name)){
@@ -2730,6 +2730,9 @@ void TreeNode::gen_array_code(ostream &asmo){
     }
     TreeNode* ptr_usenode = this;
     TreeNode* ptr_fdecnode = temp->SymTable[ptr_useid->var_name].fDecNode;
+
+    if(ptr_fdecnode->is_param)
+        Is_Param = true;
 
     // clear register eax for interval, ecx for offset counter
     asmo<<"\txorl\t%eax, %eax"<<endl;
@@ -2774,6 +2777,13 @@ void TreeNode::gen_array_code(ostream &asmo){
         asmo<<"\tmovl\t_"<<ptr_useid->var_name<<"(,%ecx,4), %eax"<<endl;
         asmo<<"\tmovl\t%eax, "<<"_lc"<<this->intervar_num<<endl;
     }
+    else if(Is_Param){
+        asmo<<"\tmovl\t"<<ptr_useid->lookup_locglosymtab()<<", %eax"<<endl;
+        asmo<<"\tshll\t$2, %ecx"<<endl;
+        asmo<<"\taddl\t%ecx"<<", %eax"<<endl;
+        asmo<<"\tmovl\t(%eax), %eax"<<endl;
+        asmo<<"\tmovl\t%eax, "<<"_lc"<<this->intervar_num<<endl;
+    }
     else{
         // mult offset * 4 to calc real offset (within INT_SIZE)
         // calc local offset in asm
@@ -2800,7 +2810,7 @@ void TreeNode::gen_array_store_code(ostream &asmo){
 
     TreeNode* ptr_useid = this->findChild(1);// ptr to this id
     TreeNode* temp = ptr_useid;
-    bool Is_Global = 0;
+    bool Is_Global = 0,Is_Param = 0;
     while(temp){
         // cerr<<temp->nodeID<<endl;
         if(temp->IsSymbolTableOn() 
@@ -2814,6 +2824,9 @@ void TreeNode::gen_array_store_code(ostream &asmo){
     }
     TreeNode* ptr_usenode = this;
     TreeNode* ptr_fdecnode = temp->SymTable[ptr_useid->var_name].fDecNode;
+
+    if(ptr_fdecnode->is_param)
+        Is_Param = true;
 
     // clear register eax for interval, ecx for offset counter
     asmo<<"\txorl\t%eax, %eax"<<endl;
@@ -2858,6 +2871,12 @@ void TreeNode::gen_array_store_code(ostream &asmo){
     // if var is in global or local, two conditions
     if(Is_Global){
         asmo<<"\tmovl\t%edx, _"<<ptr_useid->var_name<<"(,%ecx,4)"<<endl;
+    }
+    else if(Is_Param){
+        asmo<<"\tmovl\t"<<ptr_useid->lookup_locglosymtab()<<", %eax"<<endl;
+        asmo<<"\tshll\t$2, %ecx"<<endl;
+        asmo<<"\taddl\t%ecx, %eax"<<endl;
+        asmo<<"\tmovl\t%edx, (%eax)"<<endl;
     }
     else{
         // mult offset * 4 to calc real offset (within INT_SIZE)
