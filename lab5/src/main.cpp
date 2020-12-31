@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     if(root != NULL) {
         root->genNodeId(0);
         root->genSymbolTable();
-        root->printAST();
+        // root->printAST();
         
         if(root->Type_Check(root)==-1){
             return 0;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         
         //root->printAST();
         
-        root->gen_code(asmfo,root);
+        root->gen_code(cout,root);
     }
     return 0;
 }

@@ -402,31 +402,31 @@ int TreeNode::Type_Check(TreeNode *root_ptr){
         cout<<"type error"<<endl;
         return -1;
     }
-    cerr<<"type check first trip finish"<<endl;
+    // cerr<<"type check first trip finish"<<endl;
 
     if(!root_ptr->Type_Check_FirstPointFiveTrip(root_ptr)){
         cout<<"something error in 1.5 trip"<<endl;
         return -1;
     }
-    cerr<<"type check 1.5 trip finish"<<endl;
+    // cerr<<"type check 1.5 trip finish"<<endl;
 
     // gen_identifier_types
     root_ptr->Type_Check_SecondTrip(root_ptr);
-    cerr<<"type check second trip finish"<<endl;
+    // cerr<<"type check second trip finish"<<endl;
 
     // expr type check
     if(!root_ptr->Type_Check_ThirdTrip(root_ptr)){
         cout<<"expr accordinate error"<<endl;
         return -1;
     }
-    cerr<<"type check third trip finish"<<endl;
+    // cerr<<"type check third trip finish"<<endl;
 
     // stmt type check
     if(!root_ptr->Type_Check_FourthTrip(root_ptr)){
         cout<<"stmt accordinate error"<<endl;
         return -1;
     }
-    cerr<<"type check fourth trip finish"<<endl;
+    // cerr<<"type check fourth trip finish"<<endl;
 
     return 1;
 }
@@ -1022,7 +1022,6 @@ bool TreeNode::Type_Check_FourthTrip(TreeNode* ptr){
                 break;
             }
             case STMT_CONSTDECL:{
-                // TODO: in v2.0 we have to finish this
                 // cuz we didn't support with no assignment in yacc, so don't need check in constdecl
                 this->type = TYPE_VOID;
                 break;
@@ -1736,7 +1735,7 @@ void TreeNode::gen_localdec_code(ostream &asmo){
 
     int var_num = this->local_var_size;
     // calc the local space need to allocate
-    // TODO: can expand by struct or function or something
+    // TODO: can expand by struct or something
     int local_apply_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / SCOPE_MINIMUM_SIZE) * SCOPE_MINIMUM_SIZE;
 
     asmo<<"\tpushl\t"<<"%ebp"<<endl;
@@ -1786,7 +1785,6 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         if(t->label.begin_label!="")
             asmo<<t->label.begin_label<<":"<<endl;
 
-        // TODO: pack these codes to a function may be explicit
         if(cond_ptr -> nodeType == NODE_EXPR){
             cond_ptr->gen_rec_code(asmo,cond_ptr);
             asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
@@ -1814,7 +1812,6 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
         if(t->label.begin_label!="")
             asmo<<t->label.begin_label<<":"<<endl;
 
-        // TODO: pack these codes to a function may be explicit
         if(cond_ptr -> nodeType == NODE_EXPR){
             cond_ptr->gen_rec_code(asmo,cond_ptr);
             asmo<<"\tmovl\t_lc"<<cond_ptr->intervar_num<<", %eax"<<endl;
@@ -2129,6 +2126,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             TreeNode* ptr_param1 = this->findChild(1);
             if(ptr_param1 -> nodeType == NODE_VAR){
                 asmo<<"\tleal\t"<<ptr_param1->lookup_locglosymtab()<<", %eax"<<endl;
+                asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl;
             }
             else if(ptr_param1 -> nodeType == NODE_ARRAY){
                 ptr_param1->gen_array_calcaddress_code(asmo);
@@ -2537,7 +2535,6 @@ void TreeNode::gen_func_code(ostream &asmo){
     asmo<<"\t.type\t"<<this->findChild(1)->var_name<<", @function"<<endl<<endl;
     asmo<<this->findChild(1)->var_name<<":"<<endl;
 
-    // TODO: func shall push its param to stack
     if(this->label.begin_label!="")
         asmo<<this->label.begin_label<<":"<<endl;
 
@@ -2553,7 +2550,6 @@ void TreeNode::gen_func_code(ostream &asmo){
 }
 
 void TreeNode::gen_funcall_code(ostream &asmo){
-    // TODO: must finish in level 2, at this stage printf only
     if(this->nodeType != NODE_FUNCALL){
         return;
     }
@@ -2999,7 +2995,6 @@ string TreeNode::lookup_locglosymtab(){
 // string TreeNode::lookup_locglosymtab(TreeNode* t,vector<int> v){
 //     TreeNode* ptr_temp = this;
 //     string ret = "";
-//     // TODO : how to find the var if it was not declare either in this scope or global
 //     while(ptr_temp){
 //         if(ptr_temp->IsSymbolTableOn()
 //             && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
@@ -3152,7 +3147,7 @@ void TreeNode::calc_thisscope_var_space(){
     if(this->IsNeedSwitchScope() && this->IsSymbolTableOn()){
         // int var_num = this->SymTable.size();
         // // calc the local space need to allocate
-        // // TODO: can expand by struct or function or something
+        // // TODO: can expand by struct or something
         // this->thisscope_var_space = ceil((var_num * INT_SIZE + STACK_RESERVE_SIZE) * 1.0 / 16) * 16;
         // LEVEL2: change to calc array size
         // LEVEL3: ignore params while calculating
