@@ -1241,9 +1241,11 @@ void TreeNode::gen_intervar(TreeNode* t){
             case OP_NEQ:
             case OP_LAND:
             case OP_LOR:{
-                if(ptr->findChild(1)->nodeType == NODE_EXPR)
+                if(ptr->findChild(1)->nodeType == NODE_EXPR 
+                    || ptr->findChild(1)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
-                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                if(ptr->findChild(2)->nodeType == NODE_EXPR
+                    || ptr->findChild(2)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
                 ptr->intervar_num = TreeNode::localvar_cnt;
                 TreeNode::localvar_cnt += 1;
@@ -1255,7 +1257,8 @@ void TreeNode::gen_intervar(TreeNode* t){
             case OP_NOT:
             case OP_QUOTE:
             case OP_FVALUE:{
-                if(ptr->findChild(1)->nodeType == NODE_EXPR)
+                if(ptr->findChild(1)->nodeType == NODE_EXPR 
+                    || ptr->findChild(1)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
                 ptr->intervar_num = TreeNode::localvar_cnt;
                 TreeNode::localvar_cnt += 1;
@@ -1267,17 +1270,19 @@ void TreeNode::gen_intervar(TreeNode* t){
             case OP_MODEQ:
             case OP_MULEQ:
             case OP_DIVEQ:{
-                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                if(ptr->findChild(2)->nodeType == NODE_EXPR
+                    || ptr->findChild(2)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
                 break;
             }
             case OP_EQ:{
                 // NOTE: maybe OP_EQ's return num can be used as a expr to reassign
-                if(ptr->findChild(2)->nodeType == NODE_EXPR)
+                if(ptr->findChild(2)->nodeType == NODE_EXPR 
+                    || ptr->findChild(2)->nodeType == NODE_ARRAY)
                     TreeNode::localvar_cnt -= 1;
-                ptr->intervar_num = TreeNode::localvar_cnt;
-                TreeNode::localvar_cnt += 1;
-                TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
+                // ptr->intervar_num = TreeNode::localvar_cnt;
+                // TreeNode::localvar_cnt += 1;
+                // TreeNode::max_localvar_cnt = max(TreeNode::max_localvar_cnt, TreeNode::localvar_cnt);
                 break;
             }
 
@@ -1759,7 +1764,6 @@ void TreeNode::gen_stmt_code(ostream &asmo,TreeNode* t){
 
             if(declitem_expr_ptr){
                 if(declitem_expr_ptr -> nodeType == NODE_CONST){
-                    // asmo<<"\txorl\t%eax, %eax"<<endl;
                     asmo<<"\tmovl\t$"<<declitem_expr_ptr->int_val<<", %eax"<<endl;
                     asmo<<"\tmovl\t%eax, "<<declitem_id_ptr->lookup_locglosymtab()<<endl<<endl;
                 }
@@ -1961,7 +1965,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param1 -> nodeType == NODE_EXPR){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
@@ -2003,7 +2007,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param1 -> nodeType == NODE_EXPR){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
@@ -2049,8 +2053,8 @@ void TreeNode::gen_expr_code(ostream &asmo){
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
-            asmo<<"\txorl\t%edx, %edx"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%edx, %edx"<<endl;
 
             if(ptr_param1 -> nodeType == NODE_EXPR){
                 asmo<<"\tmovl\t_lc"<<ptr_param1->intervar_num<<", %eax"<<endl;
@@ -2166,7 +2170,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             if(ptr_param1) ptr_param1->gen_rec_code(asmo,ptr_param1);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param1 -> nodeType == NODE_EXPR){
                 if(ptr_param1->intervar_num != -1){
@@ -2226,7 +2230,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             TreeNode* ptr_param2 = this->findChild(2);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
@@ -2252,7 +2256,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
                 // NOTE: i don't know if pop & push eax works, cuz gen_code will corrupt eax!
                 ptr_lvalparam->gen_array_store_code(asmo);
             }
-            asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl<<endl;
+            // asmo<<"\tmovl\t%eax, _lc"<<this->intervar_num<<endl<<endl;
             break;
         }
         case OP_PLUSEQ:
@@ -2264,7 +2268,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             TreeNode* ptr_param2 = this->findChild(2);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
@@ -2308,7 +2312,7 @@ void TreeNode::gen_expr_code(ostream &asmo){
             TreeNode* ptr_param2 = this->findChild(2);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
@@ -2360,8 +2364,8 @@ void TreeNode::gen_expr_code(ostream &asmo){
             TreeNode* ptr_param2 = this->findChild(2);
             if(ptr_param2) ptr_param2->gen_rec_code(asmo,ptr_param2);
 
-            asmo<<"\txorl\t%eax, %eax"<<endl;
-            asmo<<"\txorl\t%edx, %edx"<<endl;
+            // asmo<<"\txorl\t%eax, %eax"<<endl;
+            // asmo<<"\txorl\t%edx, %edx"<<endl;
 
             if(ptr_param2 -> nodeType == NODE_EXPR){
                 if(ptr_param2->intervar_num != -1){
@@ -2740,12 +2744,15 @@ void TreeNode::gen_array_code(ostream &asmo){
 
     TreeNode* iterator_useitem = ptr_usenode->findChild(2);
     TreeNode* iterator_fdecitem = ptr_fdecnode->findChild(2);
+    int r = 0;
     while(iterator_useitem){
         asmo<<"# calc array offset"<<endl;
-        asmo<<"\tmovl\t%ecx, %eax"<<endl;
-        asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
-        asmo<<"\timull\t%edx, %eax"<<endl;
-        asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        if(r!=0){
+            asmo<<"\tmovl\t%ecx, %eax"<<endl;
+            asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
+            asmo<<"\timull\t%edx, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        }
         
         // generate code for expr(if exist)
         TreeNode* ptr_param1 = iterator_useitem->findChild(1);
@@ -2770,6 +2777,7 @@ void TreeNode::gen_array_code(ostream &asmo){
 
         iterator_useitem = iterator_useitem -> sibling;
         iterator_fdecitem = iterator_fdecitem -> sibling;
+        r += 1;
     }
     
     // if var is in global or local, two conditions
@@ -2834,12 +2842,15 @@ void TreeNode::gen_array_store_code(ostream &asmo){
 
     TreeNode* iterator_useitem = ptr_usenode->findChild(2);
     TreeNode* iterator_fdecitem = ptr_fdecnode->findChild(2);
+    int r = 0;
     while(iterator_useitem){
         asmo<<"# calc array offset"<<endl;
-        asmo<<"\tmovl\t%ecx, %eax"<<endl;
-        asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
-        asmo<<"\timull\t%edx, %eax"<<endl;
-        asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        if(r!=0){
+            asmo<<"\tmovl\t%ecx, %eax"<<endl;
+            asmo<<"\tmovl\t$"<<iterator_fdecitem->findChild(1)->int_val<<", %edx"<<endl;
+            asmo<<"\timull\t%edx, %eax"<<endl;
+            asmo<<"\tmovl\t%eax, %ecx"<<endl;
+        }
         
         // generate code for expr(if exist)
         TreeNode* ptr_param1 = iterator_useitem->findChild(1);
@@ -2864,6 +2875,7 @@ void TreeNode::gen_array_store_code(ostream &asmo){
 
         iterator_useitem = iterator_useitem -> sibling;
         iterator_fdecitem = iterator_fdecitem -> sibling;
+        r += 1;
     }
     
     // popl from the stack, which is originated in %eax, which is the number it wanna store 
@@ -2997,62 +3009,6 @@ string TreeNode::lookup_locglosymtab(){
 
     return ret;
 }
-
-// string TreeNode::gen_lvalarray_offset_code(){
-//     if(this->nodeType!=NODE_ARRAY) return "fxxk u";
-//     vector<int> v;
-//     v.clear();
-//     TreeNode* ptr_temp = this->findChild(2);
-//     while(ptr_temp){
-//         v.push_back(ptr_temp->child->int_val);
-//         ptr_temp = ptr_temp -> sibling;
-//     }
-//     string ret = this->child->lookup_locglosymtab(this,v);
-//     return ret;
-// }
-
-// string TreeNode::lookup_locglosymtab(TreeNode* t,vector<int> v){
-//     TreeNode* ptr_temp = this;
-//     string ret = "";
-//     while(ptr_temp){
-//         if(ptr_temp->IsSymbolTableOn()
-//             && ptr_temp->Is_InSymbolTable(this->lineno,this->var_name)){
-//             if(ptr_temp->nodeType == NODE_PROG){
-//                 int LinearOffset = ptr_temp->calc_array_linearoffset(v);
-
-//                 ret = "_" + this->var_name
-//                           + "+" 
-//                           + to_string(LinearOffset * INT_SIZE);
-//             }
-//             else{
-//                 // cerr<<this->nodeID<<" "<<this->scope_offset<<endl;
-//                 int LinearOffset = ptr_temp->calc_array_linearoffset(v);
-
-//                 ret = to_string(- ptr_temp->scope_offset 
-//                                 + INT_SIZE 
-//                                 + ptr_temp->SymTable[this->var_name].local_offset
-//                                 + LinearOffset * INT_SIZE) 
-//                     + "(%ebp)";
-//             }
-//             break;
-//         }
-//         ptr_temp = ptr_temp -> fath;
-//     }
-
-//     return ret;
-// }
-
-// int TreeNode::calc_array_linearoffset(vector<int> v){
-//     // NOTE: MUSY BE SURE OF node t IS THE FIRST Declare NODE of this array!
-//     TreeNode* item_ptr = this->findChild(2);
-//     int ret = 1;
-//     for(int i=0;i<v.size();i++){
-//         ret*=item_ptr->findChild(1)->int_val;
-//         ret+=v[i];
-//         item_ptr = item_ptr -> sibling;
-//     }
-//     return ret;
-// }
 
 void TreeNode::gen_offset(TreeNode* rt){
     this->dist_scope_offset();
